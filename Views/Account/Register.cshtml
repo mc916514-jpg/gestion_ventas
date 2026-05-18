@@ -1,0 +1,86 @@
+@model RegisterViewModel
+@{
+    ViewData["Title"] = "Registro";
+}
+
+<div class="row justify-content-center align-items-center" style="min-height: 85vh;">
+    <div class="col-md-6">
+        <div class="glass-card card-glow text-center p-5">
+            
+            <i class="fa-solid fa-user-plus text-emerald-soft bg-emerald-soft rounded-circle p-3 mb-4" style="font-size: 32px;"></i>
+            
+            <h2 class="mb-2">Registro de Cuenta</h2>
+            <p class="text-muted mb-4">Crea una nueva cuenta para empezar a comprar</p>
+
+            <form asp-controller="Account" asp-action="Register" method="post" class="text-start">
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3" style="font-size: 14px;"></div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Nombre" class="form-label text-secondary-dark small fw-bold">Nombre Completo</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent border-end-0 border-secondary-dark text-secondary-dark" style="border: 1px solid var(--card-border-dark);">
+                                <i class="fa-solid fa-user"></i>
+                            </span>
+                            <input asp-for="Nombre" class="form-control border-start-0" placeholder="Juan Pérez" style="border: 1px solid var(--card-border-dark);" />
+                        </div>
+                        <span asp-validation-for="Nombre" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Email" class="form-label text-secondary-dark small fw-bold">Correo Electrónico</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent border-end-0 border-secondary-dark text-secondary-dark" style="border: 1px solid var(--card-border-dark);">
+                                <i class="fa-solid fa-envelope"></i>
+                            </span>
+                            <input asp-for="Email" class="form-control border-start-0" placeholder="ejemplo@correo.com" style="border: 1px solid var(--card-border-dark);" />
+                        </div>
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label asp-for="Password" class="form-label text-secondary-dark small fw-bold">Contraseña</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent border-end-0 border-secondary-dark text-secondary-dark" style="border: 1px solid var(--card-border-dark);">
+                                <i class="fa-solid fa-lock"></i>
+                            </span>
+                            <input asp-for="Password" type="password" class="form-control border-start-0" placeholder="••••••••" style="border: 1px solid var(--card-border-dark);" />
+                        </div>
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <label asp-for="ConfirmPassword" class="form-label text-secondary-dark small fw-bold">Confirmar Contraseña</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-transparent border-end-0 border-secondary-dark text-secondary-dark" style="border: 1px solid var(--card-border-dark);">
+                                <i class="fa-solid fa-circle-check"></i>
+                            </span>
+                            <input asp-for="ConfirmPassword" type="password" class="form-control border-start-0" placeholder="••••••••" style="border: 1px solid var(--card-border-dark);" />
+                        </div>
+                        <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-premium w-100 py-3 mb-3 justify-content-center">
+                    <i class="fa-solid fa-user-plus me-2"></i> Crear Cuenta
+                </button>
+            </form>
+
+            <div class="mt-4 pt-3 border-top" style="border-color: var(--card-border-dark) !important;">
+                <p class="text-secondary-dark small mb-0">
+                    ¿Ya tienes una cuenta? 
+                    <a asp-controller="Account" asp-action="Login" class="text-emerald-soft fw-bold text-decoration-none ms-1">Iniciar Sesión</a>
+                </p>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

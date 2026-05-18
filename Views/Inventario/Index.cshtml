@@ -1,0 +1,130 @@
+@model List<Producto>
+@{
+    ViewData["Title"] = "Control de Inventario";
+}
+
+<h2 class="font-outfit fw-bold mb-4 text-white"><i class="fa-solid fa-warehouse text-indigo-soft me-2"></i> Gestión de Inventario en Tiempo Real</h2>
+
+<div class="glass-card mb-4 p-4">
+    <div class="row align-items-center justify-content-between g-3">
+        <div class="col-md-6">
+            <h5 class="font-outfit fw-bold text-white mb-1">Panel de Abastecimiento Rápido</h5>
+            <p class="text-muted small mb-0">Modifica los niveles de existencias físicas sin necesidad de recargar la página. Los cambios impactan inmediatamente en la tienda pública.</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <span class="text-secondary-dark small">Alertas de Stock Crítico (<= 5 uds.): 
+                <strong class="text-warning fs-5">@Model.Count(p => p.Stock <= 5)</strong>
+            </span>
+        </div>
+    </div>
+</div>
+
+<div class="table-responsive-custom">
+    <table class="custom-table">
+        <thead>
+            <tr>
+                <th>Código ID</th>
+                <th>Producto</th>
+                <th>Categoría</th>
+                <th>Precio</th>
+                <th>Stock Actual</th>
+                <th>Nuevo Stock</th>
+                <th class="text-end">Actualización Rápida</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in Model)
+            {
+                var stockClass = p.Stock <= 0 ? "text-danger fw-bold" : 
+                                 p.Stock <= 5 ? "text-warning fw-bold" : "text-white";
+                
+                <tr id="inv-row-@p.Id">
+                    <td class="text-muted small">#@p.Id</td>
+                    <td>
+                        <strong class="text-white small d-block">@p.Nombre</strong>
+                    </td>
+                    <td class="text-indigo-soft small">@p.CategoriaNombre</td>
+                    <td class="text-white font-outfit small">$@p.Precio.ToString("N2")</td>
+                    <td>
+                        <span id="stock-badge-@p.Id" class="@stockClass small">@p.Stock unidades</span>
+                    </td>
+                    <td>
+                        <div style="max-width: 120px;">
+                            <input type="number" id="input-stock-@p.Id" class="form-control form-control-sm text-center font-outfit" 
+                                   value="@p.Stock" min="0" style="border: 1px solid var(--card-border-dark);" />
+                        </div>
+                    </td>
+                    <td class="text-end">
+                        <button type="button" class="btn btn-premium btn-sm" id="btn-save-@p.Id" onclick="guardarStockAJAX(@p.Id)">
+                            <i class="fa-solid fa-floppy-disk"></i> Guardar
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script>
+        function guardarStockAJAX(id) {
+            const input = document.getElementById(`input-stock-${id}`);
+            const nuevoStock = parseInt(input.value);
+            const btn = document.getElementById(`btn-save-${id}`);
+            const badge = document.getElementById(`stock-badge-${id}`);
+
+            if (isNaN(nuevoStock) || nuevoStock < 0) {
+                alert("Por favor ingresa un nivel de existencias numérico válido.");
+                return;
+            }
+
+            // Cambiar botón a cargando
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>...`;
+
+            fetch('/Inventario/AjustarStock', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                },
+                body: `id=${id}&nuevoStock=${nuevoStock}`
+            })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Guardar`;
+
+                if (data.success) {
+                    // Cambiar badge en vivo con animación
+                    badge.textContent = `${nuevoStock} unidades`;
+                    
+                    // Modificar clases de color de existencias
+                    if (nuevoStock <= 0) {
+                        badge.className = "text-danger fw-bold small";
+                    } else if (nuevoStock <= 5) {
+                        badge.className = "text-warning fw-bold small";
+                    } else {
+                        badge.className = "text-white small";
+                    }
+
+                    // Efecto de parpadeo verde en la fila para denotar éxito
+                    const row = document.getElementById(`inv-row-${id}`);
+                    if (row) {
+                        row.style.boxShadow = "inset 0 0 10px rgba(16, 185, 129, 0.2)";
+                        setTimeout(() => {
+                            row.style.boxShadow = "none";
+                        }, 800);
+                    }
+                } else {
+                    alert("Error guardando stock: " + data.message);
+                }
+            })
+            .catch(() => {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Guardar`;
+                alert("Hubo un error de conexión al actualizar el stock.");
+            });
+        }
+    </script>
+}

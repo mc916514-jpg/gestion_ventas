@@ -1,0 +1,158 @@
+@model List<Pedido>
+@{
+    ViewData["Title"] = "Reporte de Ventas";
+    var categories = ViewBag.Categorias as List<Categoria> ?? new List<Categoria>();
+    var selectedCat = ViewBag.SelectedCategoria as int? ?? 0;
+    var startVal = ViewBag.Start as string ?? "";
+    var endVal = ViewBag.End as string ?? "";
+}
+
+<h2 class="font-outfit fw-bold mb-4 text-white"><i class="fa-solid fa-file-invoice-dollar text-indigo-soft me-2"></i> Reporte Detallado de Ventas</h2>
+
+<!-- FORMULARIO DE FILTROS AVANZADOS -->
+<div class="glass-card mb-4 p-4">
+    <form asp-action="Ventas" method="get">
+        <div class="row g-3 align-items-end">
+            
+            <div class="col-md-3">
+                <label class="form-label text-secondary-dark small fw-bold">Fecha de Inicio</label>
+                <input type="date" name="start" class="form-control" value="@startVal" style="border: 1px solid var(--card-border-dark);" />
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label text-secondary-dark small fw-bold">Fecha de Fin</label>
+                <input type="date" name="end" class="form-control" value="@endVal" style="border: 1px solid var(--card-border-dark);" />
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label text-secondary-dark small fw-bold">Filtrar por Categoría</label>
+                <select name="categoryId" class="form-select" style="border: 1px solid var(--card-border-dark);">
+                    <option value="">Todas las Categorías</option>
+                    @foreach (var cat in categories)
+                    {
+                        if (selectedCat == cat.Id)
+                        {
+                            <option value="@cat.Id" selected>@cat.Nombre</option>
+                        }
+                        else
+                        {
+                            <option value="@cat.Id">@cat.Nombre</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn-premium flex-grow-1 justify-content-center">
+                    <i class="fa-solid fa-magnifying-glass me-1"></i> Filtrar Reporte
+                </button>
+                @if (selectedCat > 0 || !string.IsNullOrEmpty(startVal) || !string.IsNullOrEmpty(endVal))
+                {
+                    <a asp-action="Ventas" class="btn-premium-outline" title="Limpiar Filtros">
+                        <i class="fa-solid fa-arrow-rotate-left"></i>
+                    </a>
+                }
+            </div>
+
+        </div>
+    </form>
+</div>
+
+<!-- RESUMEN DE FILTRADO AGREGADO -->
+<div class="glass-card mb-4 p-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center g-3">
+    <span class="text-secondary-dark small">Total Pedidos Coincidentes: <strong>@Model.Count</strong></span>
+    <h4 class="font-outfit fw-bold text-white mb-0">Suma Total Filtrada: <strong class="text-emerald-soft">$@Model.Sum(o => o.Total).ToString("N2")</strong></h4>
+</div>
+
+<!-- LISTADO TABULAR -->
+@if (!Model.Any())
+{
+    <div class="glass-card text-center p-5">
+        <i class="fa-solid fa-file-excel text-secondary-dark mb-3" style="font-size: 56px;"></i>
+        <h4 class="text-secondary-dark">No hay registros de ventas coincidentes</h4>
+        <p class="text-muted small">Modifica las fechas o la categoría seleccionada en los filtros superiores.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive-custom">
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>Código ID</th>
+                    <th>Fecha</th>
+                    <th>Comprador</th>
+                    <th>Dirección de Envío</th>
+                    <th>Estado</th>
+                    <th>Monto Total</th>
+                    <th class="text-end">Desglose</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ped in Model)
+                {
+                    var statusBadge = ped.Estado == "Pendiente" ? "bg-amber-soft" : 
+                                      ped.Estado == "Completado" ? "bg-emerald-soft" : "bg-rose-soft";
+
+                    <tr id="vent-row-@ped.Id">
+                        <td class="text-muted small">#@ped.Id</td>
+                        <td class="text-white small">@ped.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td class="text-white small">@ped.UsuarioNombre</td>
+                        <td class="text-secondary-dark small">@ped.DireccionEnvio</td>
+                        <td>
+                            <span class="badge @statusBadge fw-semibold">@ped.Estado</span>
+                        </td>
+                        <td class="text-white fw-bold font-outfit">$@ped.Total.ToString("N2")</td>
+                        <td class="text-end">
+                            <button class="btn btn-premium-outline btn-sm p-1 px-3" type="button" data-bs-toggle="collapse" data-bs-target="#col-details-@ped.Id">
+                                <i class="fa-solid fa-chevron-down" style="font-size: 11px;"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    
+                    <!-- Fila Collapsible de Detalles -->
+                    <tr class="collapse" id="col-details-@ped.Id">
+                        <td colspan="7" class="p-3" style="background-color: rgba(0,0,0,0.2) !important;">
+                            <div class="p-3 border rounded border-secondary border-opacity-10 bg-black bg-opacity-30">
+                                <div class="row align-items-center mb-2">
+                                    <div class="col-md-6">
+                                        <span class="text-muted small d-block"><strong>Dirección de Entrega:</strong> @ped.DireccionEnvio</span>
+                                        <span class="text-muted small d-block"><strong>Comprador:</strong> @ped.UsuarioNombre</span>
+                                    </div>
+                                    <div class="col-md-6 text-md-end text-muted small">
+                                        Detalle de Artículos Adquiridos
+                                    </div>
+                                </div>
+                                
+                                <div class="table-responsive-custom m-0">
+                                    <table class="custom-table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Artículo</th>
+                                                <th class="text-center">Cant.</th>
+                                                <th class="text-end">P. Unitario</th>
+                                                <th class="text-end">Subtotal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var det in ped.Detalles)
+                                            {
+                                                var lineSub = det.Cantidad * det.PrecioUnitario;
+                                                <tr>
+                                                    <td class="text-white small">@det.ProductoNombre</td>
+                                                    <td class="text-center text-secondary-dark small">@det.Cantidad</td>
+                                                    <td class="text-end text-secondary-dark small">$@det.PrecioUnitario.ToString("N2")</td>
+                                                    <td class="text-end text-emerald-soft small fw-bold">$@lineSub.ToString("N2")</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

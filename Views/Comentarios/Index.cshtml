@@ -1,0 +1,131 @@
+@model List<Comentario>
+@{
+    ViewData["Title"] = "Moderación de Reseñas";
+}
+
+<h2 class="font-outfit fw-bold mb-4 text-white"><i class="fa-solid fa-comments text-indigo-soft me-2"></i> Moderación de Reseñas de Clientes</h2>
+
+<div class="glass-card mb-4 p-3 d-flex justify-content-between align-items-center">
+    <span class="text-secondary-dark small">Total Comentarios: <strong>@Model.Count</strong></span>
+    <span class="badge bg-amber-soft px-3 py-2 fw-semibold" style="font-size: 11px;">Pendientes de Aprobación</span>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="glass-card text-center p-5">
+        <i class="fa-solid fa-square-check text-success mb-3" style="font-size: 56px;"></i>
+        <h3 class="text-secondary-dark font-outfit">Buzón de moderación al día</h3>
+        <p class="text-muted small">No hay reseñas pendientes por revisar en la base de datos.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive-custom">
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>Usuario / Email</th>
+                    <th>Producto</th>
+                    <th>Calificación</th>
+                    <th>Opinión / Comentario</th>
+                    <th>Fecha</th>
+                    <th>Estado</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Model)
+                {
+                    var rowClass = "";
+                    var badgeClass = c.Estado == "Pendiente" ? "bg-amber-soft" : 
+                                     c.Estado == "Aprobado" ? "bg-emerald-soft" : "bg-rose-soft";
+
+                    <tr id="comment-row-@c.Id" class="@rowClass">
+                        <td>
+                            <strong class="text-white small d-block">@c.UsuarioEmail</strong>
+                        </td>
+                        <td class="text-white small">@c.ProductoNombre</td>
+                        <td>
+                            <span class="text-amber-soft small"><i class="fa-solid fa-star"></i> @c.Calificacion</span>
+                        </td>
+                        <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: normal;">
+                            <span class="text-secondary-dark small">@c.Contenido</span>
+                        </td>
+                        <td class="text-secondary-dark small">@c.Fecha.ToString("dd/MM/yyyy")</td>
+                        <td>
+                            <span class="badge @badgeClass fw-semibold" id="status-badge-@c.Id">
+                                @c.Estado
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <div class="d-inline-flex gap-2">
+                                <button type="button" class="btn btn-premium btn-sm p-2 px-3 bg-emerald-soft text-success border-0" 
+                                        onclick="moderarComentario(@c.Id, 'Aprobar')" title="Aprobar comentario">
+                                    <i class="fa-solid fa-check"></i>
+                                </button>
+                                <button type="button" class="btn btn-premium-outline btn-sm p-2 px-3 border-danger text-danger bg-rose-soft bg-opacity-10" 
+                                        onclick="moderarComentario(@c.Id, 'Rechazar')" title="Rechazar comentario">
+                                    <i class="fa-solid fa-ban"></i>
+                                </button>
+                                <button type="button" class="btn btn-premium-outline btn-sm p-2 px-3 border-secondary-dark text-muted" 
+                                        onclick="moderarComentario(@c.Id, 'Eliminar')" title="Eliminar permanentemente">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        function moderarComentario(id, accion) {
+            if (accion === 'Eliminar' && !confirm('¿Estás seguro de que deseas eliminar permanentemente esta reseña?')) {
+                return;
+            }
+
+            fetch(`/Comentarios/${accion}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                },
+                body: `id=${id}`
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const badge = document.getElementById(`status-badge-${id}`);
+                    const row = document.getElementById(`comment-row-${id}`);
+
+                    if (accion === 'Aprobar') {
+                        if (badge) {
+                            badge.className = "badge bg-emerald-soft fw-semibold";
+                            badge.textContent = "Aprobado";
+                        }
+                    } else if (accion === 'Rechazar') {
+                        if (badge) {
+                            badge.className = "badge bg-rose-soft fw-semibold";
+                            badge.textContent = "Rechazado";
+                        }
+                    } else if (accion === 'Eliminar') {
+                        // Desvanecer fila y eliminar físicamente
+                        if (row) {
+                            row.style.opacity = '0';
+                            row.style.transform = 'translateX(20px)';
+                            setTimeout(() => {
+                                row.remove();
+                            }, 300);
+                        }
+                    }
+                } else {
+                    alert("Error en moderación: " + data.message);
+                }
+            })
+            .catch(() => alert("Error al procesar la moderación."));
+        }
+    </script>
+}

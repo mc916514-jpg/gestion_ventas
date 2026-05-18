@@ -1,0 +1,115 @@
+@model List<Producto>
+@{
+    ViewData["Title"] = "Gestión de Productos";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="font-outfit fw-bold mb-0 text-white"><i class="fa-solid fa-box text-indigo-soft me-2"></i> Catálogo de Productos</h2>
+    <a asp-action="Crear" class="btn-premium">
+        <i class="fa-solid fa-plus"></i> Nuevo Producto
+    </a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="glass-card text-center p-5">
+        <i class="fa-solid fa-boxes-stacked text-secondary-dark mb-3" style="font-size: 56px;"></i>
+        <h3 class="text-secondary-dark font-outfit">No hay productos registrados</h3>
+        <p class="text-muted small">Crea un producto para poblar tu catálogo comercial.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive-custom">
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>Código ID</th>
+                    <th>Imagen</th>
+                    <th>Nombre de Artículo</th>
+                    <th>Categoría</th>
+                    <th>Precio</th>
+                    <th>Existencias</th>
+                    <th>Estado</th>
+                    <th class="text-end">Operaciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model)
+                {
+                    var statusBadge = p.Estado ? "bg-emerald-soft" : "bg-rose-soft";
+                    var statusText = p.Estado ? "Activo" : "Inactivo";
+                    var stockClass = p.Stock <= 0 ? "text-danger fw-bold" : p.Stock <= 5 ? "text-warning fw-bold" : "text-secondary-dark";
+                    var imgUrl = string.IsNullOrEmpty(p.ImagenUrl) 
+                        ? "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100&auto=format&fit=crop&q=80" 
+                        : p.ImagenUrl;
+
+                    <tr id="prod-row-@p.Id">
+                        <td class="text-muted small">#@p.Id</td>
+                        <td>
+                            <img src="@imgUrl" class="rounded" style="width: 42px; height: 42px; object-fit: cover; border: 1px solid var(--card-border-dark);" alt="@p.Nombre" />
+                        </td>
+                        <td>
+                            <strong class="text-white small d-block">@p.Nombre</strong>
+                            <span class="text-muted small d-block text-truncate" style="max-width: 250px;">@p.Descripcion</span>
+                        </td>
+                        <td class="text-indigo-soft small">@p.CategoriaNombre</td>
+                        <td class="text-white font-outfit small">$@p.Precio.ToString("N2")</td>
+                        <td>
+                            <span class="small @stockClass">@p.Stock uds.</span>
+                        </td>
+                        <td>
+                            <span class="badge @statusBadge fw-semibold">@statusText</span>
+                        </td>
+                        <td class="text-end">
+                            <div class="d-inline-flex gap-2">
+                                <a asp-action="Editar" asp-route-id="@p.Id" class="btn btn-premium-outline btn-sm p-2 px-3 border-secondary-dark text-white" title="Editar Producto">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </a>
+                                <button type="button" class="btn btn-premium-outline btn-sm p-2 px-3 border-danger text-danger bg-rose-soft bg-opacity-10" 
+                                        onclick="eliminarProductoAJAX(@p.Id)" title="Eliminar Producto">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        function eliminarProductoAJAX(id) {
+            if (!confirm("¿Estás seguro de que deseas eliminar permanentemente este producto de la base de datos?")) {
+                return;
+            }
+
+            fetch(`/Productos/Eliminar/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Remover fila con desvanecimiento
+                    const row = document.getElementById(`prod-row-${id}`);
+                    if (row) {
+                        row.style.opacity = '0';
+                        row.style.transform = 'translateX(20px)';
+                        setTimeout(() => {
+                            row.remove();
+                        }, 300);
+                    }
+                } else {
+                    alert("Error eliminando producto: " + data.message);
+                }
+            })
+            .catch(() => alert("Error de comunicación con el servidor al eliminar."));
+        }
+    </script>
+}

@@ -1,0 +1,101 @@
+@model List<Pedido>
+@{
+    ViewData["Title"] = "Mis Pedidos";
+}
+
+<h2 class="font-outfit fw-bold mb-4 text-white"><i class="fa-solid fa-receipt text-indigo-soft me-2"></i> Mis Pedidos</h2>
+
+@if (!Model.Any())
+{
+    <div class="glass-card text-center p-5">
+        <i class="fa-solid fa-box-open text-secondary-dark mb-3" style="font-size: 56px;"></i>
+        <h3 class="text-secondary-dark font-outfit">No tienes pedidos registrados</h3>
+        <p class="text-muted small mb-4">Aún no has realizado ninguna compra en nuestra tienda virtual.</p>
+        <a asp-controller="Home" asp-action="Index" class="btn-premium py-3 px-4">
+            <i class="fa-solid fa-store me-1"></i> Ir a la Tienda
+        </a>
+    </div>
+}
+else
+{
+    <div class="d-flex flex-column gap-4">
+        @foreach (var ped in Model)
+        {
+            var badgeClass = ped.Estado == "Pendiente" ? "bg-amber-soft" : 
+                             ped.Estado == "Completado" ? "bg-emerald-soft" : "bg-rose-soft";
+            
+            <div class="glass-card p-4">
+                
+                <!-- HEADER DEL PEDIDO -->
+                <div class="row align-items-center justify-content-between g-3 mb-3 pb-3 border-bottom" style="border-color: var(--card-border-dark) !important;">
+                    <div class="col-md-3">
+                        <span class="text-secondary-dark small d-block">Identificador de Pedido</span>
+                        <strong class="text-white">#@ped.Id</strong>
+                    </div>
+                    <div class="col-md-3">
+                        <span class="text-secondary-dark small d-block">Fecha de Compra</span>
+                        <span class="text-white small">@ped.Fecha.ToString("dd/MM/yyyy HH:mm")</span>
+                    </div>
+                    <div class="col-md-2">
+                        <span class="text-secondary-dark small d-block">Monto Total</span>
+                        <strong class="text-emerald-soft fs-5">$@ped.Total.ToString("N2")</strong>
+                    </div>
+                    <div class="col-md-2 text-md-center">
+                        <span class="text-secondary-dark small d-block mb-1">Estado</span>
+                        <span class="badge @badgeClass px-3 py-2 fw-semibold" style="font-size: 11px;">@ped.Estado</span>
+                    </div>
+                    <div class="col-md-2 text-md-end">
+                        <button class="btn btn-premium-outline btn-sm px-3" type="button" data-bs-toggle="collapse" data-bs-target="#ped-details-@ped.Id" aria-expanded="false">
+                            <i class="fa-solid fa-chevron-down me-1"></i> Ver Detalles
+                        </button>
+                    </div>
+                </div>
+
+                <!-- COLLAPSE PANEL DETAILS -->
+                <div class="collapse" id="ped-details-@ped.Id">
+                    <div class="row g-4 mb-3">
+                        <!-- Detalles de Entrega -->
+                        <div class="col-md-6 border-end" style="border-color: var(--card-border-dark) !important;">
+                            <h6 class="font-outfit fw-bold text-white mb-2"><i class="fa-solid fa-truck-ramp-box text-indigo-soft me-2"></i> Información de Envío</h6>
+                            <div class="small text-secondary-dark mb-1"><strong>Cliente:</strong> @ped.UsuarioNombre</div>
+                            <div class="small text-secondary-dark mb-1"><strong>Dirección:</strong> @ped.DireccionEnvio</div>
+                            <div class="small text-secondary-dark"><strong>Estado:</strong> Entregado</div>
+                        </div>
+
+                        <!-- Artículos del Pedido -->
+                        <div class="col-md-6">
+                            <h6 class="font-outfit fw-bold text-white mb-3"><i class="fa-solid fa-list-check text-indigo-soft me-2"></i> Desglose de Artículos</h6>
+                            
+                            <div class="table-responsive-custom">
+                                <table class="custom-table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Artículo</th>
+                                            <th class="text-center">Cant.</th>
+                                            <th class="text-end">P. Unitario</th>
+                                            <th class="text-end">Subtotal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var det in ped.Detalles)
+                                        {
+                                            var itemSub = det.PrecioUnitario * det.Cantidad;
+                                            <tr>
+                                                <td class="text-white small">@det.ProductoNombre</td>
+                                                <td class="text-center text-secondary-dark small">@det.Cantidad</td>
+                                                <td class="text-end text-secondary-dark small">$@det.PrecioUnitario.ToString("N2")</td>
+                                                <td class="text-end text-white small fw-bold">$@itemSub.ToString("N2")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        }
+    </div>
+}

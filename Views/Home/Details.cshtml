@@ -1,0 +1,209 @@
+@model Producto
+@{
+    ViewData["Title"] = Model.Nombre;
+    var reviews = ViewBag.Reviews as List<Comentario> ?? new List<Comentario>();
+    var imgUrl = string.IsNullOrEmpty(Model.ImagenUrl) 
+        ? $"https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop&q=80" 
+        : Model.ImagenUrl;
+    var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
+}
+
+<div class="mb-4">
+    <a asp-action="Index" class="btn-premium-outline btn-sm">
+        <i class="fa-solid fa-arrow-left"></i> Volver al Catálogo
+    </a>
+</div>
+
+<!-- DETALLES DEL PRODUCTO SPLIT PANEL -->
+<div class="glass-card card-glow mb-5 p-5">
+    <div class="row g-5">
+        
+        <!-- FOTO DEL PRODUCTO -->
+        <div class="col-lg-6">
+            <div class="product-img-wrapper" style="padding-top: 80%; border-radius: 16px;">
+                <img src="@imgUrl" class="product-img" style="object-fit: cover;" alt="@Model.Nombre" />
+            </div>
+        </div>
+
+        <!-- INFO COMERCIAL -->
+        <div class="col-lg-6 d-flex flex-column justify-content-center">
+            
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="badge bg-indigo-soft py-2 px-3 fw-bold" style="font-size: 13px;">@Model.CategoriaNombre</span>
+                <span class="text-secondary-dark small">ID: #@Model.Id</span>
+            </div>
+
+            <h1 class="font-outfit fw-bold display-6 mb-3 text-white">@Model.Nombre</h1>
+
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <div class="text-amber-soft fs-5">
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                </div>
+                <span class="text-muted small">(@reviews.Count reseñas aprobadas)</span>
+            </div>
+
+            <p class="text-secondary-dark fs-6 mb-4" style="line-height: 1.8;">
+                @Model.Descripcion
+            </p>
+
+            <div class="glass-card mb-4 p-3 bg-opacity-10" style="background: rgba(255,255,255,0.01);">
+                <div class="row align-items-center">
+                    <div class="col-6">
+                        <span class="small text-secondary-dark d-block">Precio Unitario</span>
+                        <span class="fs-2 fw-bold text-white">$@Model.Precio.ToString("N2")</span>
+                    </div>
+                    <div class="col-6 text-end">
+                        <span class="small text-secondary-dark d-block mb-1">Disponibilidad</span>
+                        @if (Model.Stock <= 0)
+                        {
+                            <span class="badge bg-danger bg-opacity-25 text-danger px-3 py-2 fw-bold"><i class="fa-solid fa-triangle-exclamation me-1"></i> Agotado</span>
+                        }
+                        else if (Model.Stock <= 5)
+                        {
+                            <span class="badge bg-warning bg-opacity-25 text-warning px-3 py-2 fw-bold"><i class="fa-solid fa-clock-rotate-left me-1"></i> ¡Solo @Model.Stock unidades!</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success bg-opacity-25 text-success px-3 py-2 fw-bold"><i class="fa-solid fa-circle-check me-1"></i> @Model.Stock en stock</span>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- AGREGAR AL CARRITO FORM -->
+            @if (Model.Stock > 0)
+            {
+                <form asp-controller="Pedidos" asp-action="AgregarAlCarrito" method="post" class="row g-3 align-items-center">
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    @Html.AntiForgeryToken()
+                    
+                    <div class="col-auto">
+                        <label class="visually-hidden">Cantidad</label>
+                        <select name="cantidad" class="form-select" style="min-width: 90px; border: 1px solid var(--card-border-dark);">
+                            @for (int i = 1; i <= Math.Min(10, Model.Stock); i++)
+                            {
+                                <option value="@i">@i</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col">
+                        <button type="submit" class="btn-premium w-100 py-3 justify-content-center">
+                            <i class="fa-solid fa-cart-shopping me-2"></i> Añadir al Carrito
+                        </button>
+                    </div>
+                </form>
+            }
+            else
+            {
+                <button class="btn-premium-outline py-3 w-100 border-secondary-dark text-muted" disabled>
+                    <i class="fa-solid fa-cart-shopping me-2"></i> Temporalmente Fuera de Stock
+                </button>
+            }
+
+        </div>
+    </div>
+</div>
+
+<!-- SECCIÓN DE COMENTARIOS / RESEÑAS -->
+<div class="row">
+    
+    <!-- LISTADO DE COMENTARIOS -->
+    <div class="col-md-7 mb-5">
+        <h3 class="font-outfit fw-bold mb-4"><i class="fa-solid fa-comments text-indigo-soft me-2"></i> Reseñas de Clientes</h3>
+        
+        @if (!reviews.Any())
+        {
+            <div class="glass-card text-center p-4">
+                <i class="fa-solid fa-comment-slash text-secondary-dark mb-2" style="font-size: 32px;"></i>
+                <p class="text-secondary-dark small mb-0">Nadie ha comentado sobre este producto todavía.</p>
+                <p class="text-muted small">¡Sé el primero en dejar tu opinión!</p>
+            </div>
+        }
+        else
+        {
+            <div class="d-flex flex-column gap-3">
+                @foreach (var rev in reviews)
+                {
+                    <div class="glass-card p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <span class="fw-bold text-white small">@rev.UsuarioEmail</span>
+                                <div class="text-amber-soft small mt-1">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        if (i <= rev.Calificacion)
+                                        {
+                                            <i class="fa-solid fa-star"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fa-regular fa-star text-muted"></i>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                            <span class="text-muted small">@rev.Fecha.ToString("dd/MM/yyyy")</span>
+                        </div>
+                        <p class="text-secondary-dark small mb-0" style="line-height: 1.6;">
+                            @rev.Contenido
+                        </p>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- FORMULARIO NUEVA RESEÑA -->
+    <div class="col-md-5">
+        <div class="glass-card p-4">
+            <h4 class="font-outfit fw-bold mb-3">Escribe una reseña</h4>
+            
+            @if (isAuthenticated)
+            {
+                <form asp-controller="Home" asp-action="AgregarComentario" method="post">
+                    <input type="hidden" name="ProductoId" value="@Model.Id" />
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-3">
+                        <label class="form-label text-secondary-dark small fw-bold">Calificación</label>
+                        <div class="d-flex gap-2">
+                            <select name="Calificacion" class="form-select" style="border: 1px solid var(--card-border-dark);">
+                                <option value="5">⭐⭐⭐⭐⭐ Excelente (5)</option>
+                                <option value="4">⭐⭐⭐⭐ Muy bueno (4)</option>
+                                <option value="3">⭐⭐⭐ Bueno (3)</option>
+                                <option value="2">⭐⭐ Regular (2)</option>
+                                <option value="1">⭐ Insuficiente (1)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-secondary-dark small fw-bold">Comentario</label>
+                        <textarea name="Contenido" rows="4" class="form-control" placeholder="Escribe tu opinión sincera sobre el producto..." style="border: 1px solid var(--card-border-dark);" required></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-premium w-100 justify-content-center">
+                        <i class="fa-solid fa-paper-plane me-2"></i> Publicar Reseña
+                    </button>
+                    <p class="text-muted small text-center mt-2 mb-0">Los comentarios pasan por un panel de moderación antes de publicarse.</p>
+                </form>
+            }
+            else
+            {
+                <div class="text-center p-3">
+                    <i class="fa-solid fa-lock text-secondary-dark mb-3" style="font-size: 28px;"></i>
+                    <p class="text-secondary-dark small">Debes ingresar a tu cuenta para escribir una valoración.</p>
+                    <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Context.Request.Path" class="btn-premium btn-sm w-100 justify-content-center">
+                        Iniciar Sesión
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+
+</div>

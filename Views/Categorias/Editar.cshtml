@@ -1,0 +1,53 @@
+@model Categoria
+@{
+    ViewData["Title"] = "Editar Categoría";
+}
+
+<div class="mb-4">
+    <a asp-action="Index" class="btn-premium-outline btn-sm">
+        <i class="fa-solid fa-arrow-left"></i> Volver al Listado
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="glass-card card-glow p-5">
+            <h2 class="font-outfit fw-bold mb-2"><i class="fa-solid fa-pen-to-square text-indigo-soft me-2"></i> Editar Categoría</h2>
+            <p class="text-muted mb-4">Modifica los detalles de la categoría seleccionada</p>
+
+            <form asp-action="Editar" method="post">
+                <input type="hidden" asp-for="Id" />
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3" style="font-size: 14px;"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Nombre" class="form-label text-secondary-dark small fw-bold">Nombre de Categoría</label>
+                    <input asp-for="Nombre" class="form-control" style="border: 1px solid var(--card-border-dark);" required />
+                    <span asp-validation-for="Nombre" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Descripcion" class="form-label text-secondary-dark small fw-bold">Descripción Corta</label>
+                    <textarea asp-for="Descripcion" rows="4" class="form-control" style="border: 1px solid var(--card-border-dark);" required></textarea>
+                    <span asp-validation-for="Descripcion" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-4">
+                    <div class="form-check form-switch">
+                        <input asp-for="Estado" class="form-check-input bg-transparent" type="checkbox" role="switch" style="border: 1px solid var(--card-border-dark);" />
+                        <label asp-for="Estado" class="form-check-label text-white small fw-bold ms-2">Habilitada / Activa en la Tienda Pública</label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-premium w-100 py-3 justify-content-center">
+                    <i class="fa-solid fa-floppy-disk me-2"></i> Guardar Cambios
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

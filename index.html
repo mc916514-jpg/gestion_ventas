@@ -1,0 +1,1664 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma de Gestión Comercial | Dashboard Administrativo</title>
+    
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Supabase JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Custom Premium CSS -->
+    <style>
+        :root {
+            --bg-color-dark: #090a0f;
+            --sidebar-color-dark: #0e111a;
+            --card-bg-dark: rgba(20, 24, 39, 0.6);
+            --card-border-dark: rgba(255, 255, 255, 0.08);
+            --text-primary-dark: #f8fafc;
+            --text-secondary-dark: #94a3b8;
+            --primary-accent: #6366f1; /* Indigo */
+            --primary-accent-glow: rgba(99, 102, 241, 0.15);
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-blur: blur(12px);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color-dark);
+            color: var(--text-primary-dark);
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: all 0.3s ease;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* ─── SIDEBAR ─── */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 260px;
+            background-color: var(--sidebar-color-dark);
+            border-right: 1px solid var(--card-border-dark);
+            z-index: 1000;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary-dark);
+            text-decoration: none;
+            margin-bottom: 36px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .sidebar-brand i {
+            color: var(--primary-accent);
+            font-size: 24px;
+            text-shadow: 0 0 12px var(--primary-accent-glow);
+        }
+
+        .nav-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-item-link {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            color: var(--text-secondary-dark);
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .nav-item-link:hover {
+            color: var(--text-primary-dark);
+            background-color: rgba(255, 255, 255, 0.03);
+            transform: translateX(4px);
+        }
+
+        .nav-item-link.active {
+            color: var(--text-primary-dark);
+            background-color: var(--primary-accent-glow);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+        }
+
+        .nav-item-link i {
+            font-size: 18px;
+        }
+
+        /* ─── MAIN CONTENT ─── */
+        .main-content {
+            margin-left: 260px;
+            padding: 40px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ─── NAVBAR / HEADER ─── */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--card-bg-dark);
+            border: 1px solid var(--card-border-dark);
+            padding: 8px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .user-profile:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        /* ─── GLASS CARDS ─── */
+        .glass-card {
+            background: var(--card-bg-dark);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--card-border-dark);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
+        }
+
+        .card-glow::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.06) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        /* ─── STATS CARDS ─── */
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-bottom: 16px;
+        }
+
+        .stat-val {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .stat-title {
+            color: var(--text-secondary-dark);
+            font-size: 13px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Accent Colors */
+        .bg-indigo-soft { background: rgba(99, 102, 241, 0.12); color: #818cf8; }
+        .bg-emerald-soft { background: rgba(16, 185, 129, 0.12); color: #34d399; }
+        .bg-amber-soft { background: rgba(245, 158, 11, 0.12); color: #fbbf24; }
+        .bg-rose-soft { background: rgba(239, 68, 68, 0.12); color: #f87171; }
+
+        /* ─── TABLES ─── */
+        .table-responsive {
+            border: 1px solid var(--card-border-dark);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .custom-table {
+            margin: 0;
+            color: var(--text-primary-dark);
+        }
+
+        .custom-table th {
+            background-color: rgba(255, 255, 255, 0.02) !important;
+            color: var(--text-secondary-dark);
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--card-border-dark);
+        }
+
+        .custom-table td {
+            background-color: transparent !important;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--card-border-dark);
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        .custom-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .custom-table tbody tr {
+            transition: all 0.2s;
+        }
+
+        .custom-table tbody tr:hover td {
+            background-color: rgba(255, 255, 255, 0.02) !important;
+        }
+
+        /* ─── FORMS / CONTROLS ─── */
+        .form-control, .form-select {
+            background-color: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border-dark);
+            color: var(--text-primary-dark);
+            border-radius: 8px;
+            padding: 10px 16px;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus, .form-select:focus {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-color: var(--primary-accent);
+            color: var(--text-primary-dark);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+            outline: none;
+        }
+
+        .form-control::placeholder {
+            color: rgba(148, 163, 184, 0.4);
+        }
+
+        /* Buttons */
+        .btn-premium {
+            background-color: var(--primary-accent);
+            color: #ffffff;
+            font-weight: 500;
+            border-radius: 8px;
+            padding: 10px 20px;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .btn-premium:hover {
+            background-color: #4f46e5;
+            color: #ffffff;
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+            transform: translateY(-1px);
+        }
+
+        .btn-premium-outline {
+            background-color: transparent;
+            color: var(--text-primary-dark);
+            border: 1px solid var(--card-border-dark);
+            font-weight: 500;
+            border-radius: 8px;
+            padding: 10px 20px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-premium-outline:hover {
+            background-color: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.25);
+            color: var(--text-primary-dark);
+        }
+
+        /* ─── WEATHER WIDGET ─── */
+        .weather-widget {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border-dark);
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            color: var(--text-secondary-dark);
+        }
+
+        .weather-widget i {
+            color: #fbbf24;
+            font-size: 16px;
+        }
+
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 991px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 24px;
+            }
+            .top-bar {
+                margin-bottom: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ─── SIDEBAR ─── -->
+    <div class="sidebar" id="sidebar">
+        <a href="#" class="sidebar-brand">
+            <i class="bi bi-cpu-fill"></i>
+            <span>COMMERCE PRO</span>
+        </a>
+        
+        <ul class="nav-menu">
+            <li>
+                <a class="nav-item-link active" onclick="switchView('dashboard')">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a class="nav-item-link" onclick="switchView('productos')">
+                    <i class="bi bi-box-seam-fill"></i>
+                    <span>Productos</span>
+                </a>
+            </li>
+            <li>
+                <a class="nav-item-link" onclick="switchView('categorias')">
+                    <i class="bi bi-tags-fill"></i>
+                    <span>Categorías</span>
+                </a>
+            </li>
+            <li>
+                <a class="nav-item-link" onclick="switchView('inventario')">
+                    <i class="bi bi-database-fill-gear"></i>
+                    <span>Inventario</span>
+                </a>
+            </li>
+            <li>
+                <a class="nav-item-link" onclick="switchView('pedidos')">
+                    <i class="bi bi-cart-fill"></i>
+                    <span>Pedidos / Carrito</span>
+                </a>
+            </li>
+            <li>
+                <a class="nav-item-link" onclick="switchView('comentarios')">
+                    <i class="bi bi-chat-left-text-fill"></i>
+                    <span>Comentarios</span>
+                </a>
+            </li>
+            <li>
+                <a class="nav-item-link" onclick="switchView('contactos')">
+                    <i class="bi bi-envelope-paper-fill"></i>
+                    <span>Contactos</span>
+                </a>
+            </li>
+            <li>
+                <a class="nav-item-link" onclick="switchView('reportes')">
+                    <i class="bi bi-bar-chart-line-fill"></i>
+                    <span>Reportes Ventas</span>
+                </a>
+            </li>
+        </ul>
+        
+        <div class="mt-auto">
+            <div class="d-flex align-items-center gap-3 py-3 border-top border-secondary border-opacity-25">
+                <div class="user-avatar">A</div>
+                <div>
+                    <div class="fw-bold" style="font-size: 14px;">Administrador</div>
+                    <div style="font-size: 11px; color: var(--text-secondary-dark);">Rol: Admin</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── MAIN CONTENT ─── -->
+    <div class="main-content">
+        
+        <!-- ─── TOP HEADER ─── -->
+        <header class="top-bar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-premium-outline d-lg-none" onclick="toggleSidebar()">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div>
+                    <h2 class="mb-1" id="view-title">Dashboard General</h2>
+                    <p class="mb-0 text-muted" style="font-size: 14px;">Bienvenido al centro de operaciones comerciales.</p>
+                </div>
+            </div>
+            
+            <div class="d-flex align-items-center gap-3">
+                <!-- External Weather API Integration Widget (AJAX Loaded) -->
+                <div class="weather-widget" id="weather-widget">
+                    <i class="bi bi-sun-fill"></i>
+                    <span id="weather-temp">Cargando clima...</span>
+                </div>
+                
+                <div class="user-profile">
+                    <div class="user-avatar">A</div>
+                    <span class="d-none d-md-inline" style="font-size: 14px; font-weight: 500;">Martín López</span>
+                    <i class="bi bi-chevron-down text-muted" style="font-size: 12px;"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- ─── VIEWS CONTAINER ─── -->
+        <div id="views-container">
+
+            <!-- 1. DASHBOARD VIEW -->
+            <div id="view-dashboard" class="app-view">
+                
+                <!-- Stat Cards Grid -->
+                <div class="row g-4 mb-4">
+                    <div class="col-xl-3 col-md-6">
+                        <div class="glass-card card-glow">
+                            <div class="stat-icon bg-indigo-soft">
+                                <i class="bi bi-cash-coin"></i>
+                            </div>
+                            <div class="stat-val">$245,890.00</div>
+                            <div class="stat-title">Ventas Totales (MXN)</div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="glass-card card-glow">
+                            <div class="stat-icon bg-emerald-soft">
+                                <i class="bi bi-bag-check-fill"></i>
+                            </div>
+                            <div class="stat-val">1,248</div>
+                            <div class="stat-title">Pedidos Completados</div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="glass-card card-glow">
+                            <div class="stat-icon bg-amber-soft">
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                            </div>
+                            <div class="stat-val text-warning">5</div>
+                            <div class="stat-title">Alertas de Stock Mínimo</div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6">
+                        <div class="glass-card card-glow">
+                            <div class="stat-icon bg-rose-soft">
+                                <i class="bi bi-people-fill"></i>
+                            </div>
+                            <div class="stat-val">142</div>
+                            <div class="stat-title">Usuarios Registrados</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Graphs and Actions -->
+                <div class="row g-4 mb-4">
+                    <div class="col-lg-8">
+                        <div class="glass-card h-100">
+                            <h4 class="mb-4">Tendencia de Ventas (Mensual)</h4>
+                            <div style="height: 300px;">
+                                <canvas id="salesChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="glass-card h-100">
+                            <h4 class="mb-3">Historial de Auditoría</h4>
+                            <p class="text-muted" style="font-size: 13px; margin-bottom: 20px;">Acciones registradas en el sistema (HistorialAcciones).</p>
+                            <div class="d-flex flex-column gap-3" id="audit-history">
+                                <div class="d-flex gap-3 align-items-start" style="font-size: 13px;">
+                                    <div class="p-1 rounded bg-indigo-soft"><i class="bi bi-person-fill-add"></i></div>
+                                    <div>
+                                        <div class="fw-bold">Registro de usuario nuevo</div>
+                                        <div class="text-muted">Cliente: juan.perez@email.com</div>
+                                        <div style="font-size: 10px; color: var(--text-secondary-dark);">Hace 5 min - IP: 192.168.1.5</div>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-3 align-items-start" style="font-size: 13px;">
+                                    <div class="p-1 rounded bg-emerald-soft"><i class="bi bi-cart-check"></i></div>
+                                    <div>
+                                        <div class="fw-bold">Pedido #1084 completado</div>
+                                        <div class="text-muted">Monto total: $4,550.00 MXN</div>
+                                        <div style="font-size: 10px; color: var(--text-secondary-dark);">Hace 24 min - IP: 192.168.1.12</div>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-3 align-items-start" style="font-size: 13px;">
+                                    <div class="p-1 rounded bg-amber-soft"><i class="bi bi-box-arrow-in-down"></i></div>
+                                    <div>
+                                        <div class="fw-bold">Entrada de stock de inventario</div>
+                                        <div class="text-muted">Producto: Smart TV LED 4K (+20 u)</div>
+                                        <div style="font-size: 10px; color: var(--text-secondary-dark);">Hace 1 hora - IP: localhost</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 2. PRODUCTOS VIEW (AJAX Search and Filters) -->
+            <div id="view-productos" class="app-view d-none">
+                <div class="glass-card mb-4">
+                    <div class="row g-3 align-items-center mb-4">
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <span class="input-group-text bg-transparent border-end-0 border-secondary border-opacity-25 text-secondary">
+                                    <i class="bi bi-search"></i>
+                                </span>
+                                <input type="text" id="productSearch" class="form-control border-start-0" placeholder="Búsqueda en tiempo real (AJAX)..." onkeyup="searchProducts()">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <select id="categoryFilter" class="form-select" onchange="filterProducts()">
+                                <option value="all">Todas las Categorías</option>
+                                <option value="1">Electrónica</option>
+                                <option value="2">Hogar y Cocina</option>
+                                <option value="3">Moda y Calzado</option>
+                                <option value="4">Deportes</option>
+                            </select>
+                        </div>
+                        <div class="col-md-5 text-md-end">
+                            <button class="btn btn-premium" onclick="showProductModal()">
+                                <i class="bi bi-plus-lg me-2"></i>Nuevo Producto
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table custom-table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Imagen</th>
+                                    <th>Nombre</th>
+                                    <th>Categoría</th>
+                                    <th>Precio</th>
+                                    <th>Stock</th>
+                                    <th>Estado</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsTableBody">
+                                <!-- Products list (AJAX simulated) -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. CATEGORIAS VIEW -->
+            <div id="view-categorias" class="app-view d-none">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="glass-card">
+                            <h4 class="mb-4">Nueva Categoría</h4>
+                            <form id="categoryForm" onsubmit="saveCategory(event)">
+                                <div class="mb-3">
+                                    <label class="form-label">Nombre de Categoría</label>
+                                    <input type="text" id="catName" class="form-control" placeholder="Ej: Electrónica" required>
+                                    <div class="invalid-feedback">Por favor, ingresa el nombre.</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Descripción</label>
+                                    <textarea id="catDesc" class="form-control" rows="3" placeholder="Descripción breve..." required></textarea>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label">Estado</label>
+                                    <select id="catState" class="form-select">
+                                        <option value="true">Activo</option>
+                                        <option value="false">Inactivo</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-premium w-100">Guardar Categoría</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="glass-card">
+                            <h4 class="mb-4">Lista de Categorías</h4>
+                            <div class="table-responsive">
+                                <table class="table custom-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Nombre</th>
+                                            <th>Descripción</th>
+                                            <th>Estado</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="categoriesTableBody">
+                                        <tr>
+                                            <td>1</td>
+                                            <td class="fw-bold">Electrónica</td>
+                                            <td class="text-muted">Smartphones, laptops, Smart TVs y accesorios.</td>
+                                            <td><span class="badge bg-success-subtle text-success">Activo</span></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-premium-outline py-1 px-2"><i class="bi bi-pencil"></i></button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>2</td>
+                                            <td class="fw-bold">Hogar y Cocina</td>
+                                            <td class="text-muted">Artículos electrodomésticos y decoración del hogar.</td>
+                                            <td><span class="badge bg-success-subtle text-success">Activo</span></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-premium-outline py-1 px-2"><i class="bi bi-pencil"></i></button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. INVENTARIO VIEW -->
+            <div id="view-inventario" class="app-view d-none">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="glass-card">
+                            <h4 class="mb-4">Ajuste de Stock (Atómico)</h4>
+                            <form id="stockForm" onsubmit="adjustStock(event)">
+                                <div class="mb-3">
+                                    <label class="form-label">Seleccionar Producto</label>
+                                    <select id="stockProduct" class="form-select" required>
+                                        <option value="1">Smart TV LED 4K 55" (Stock actual: 12)</option>
+                                        <option value="2">Laptop Pro Core i7 (Stock actual: 8)</option>
+                                        <option value="3">Smartphone Galaxy S24 (Stock actual: 15)</option>
+                                        <option value="4">Cafetera Espresso Pro (Stock actual: 3)</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Tipo de Movimiento</label>
+                                    <select id="stockAction" class="form-select" required>
+                                        <option value="in">Entrada (+ Sumar Stock)</option>
+                                        <option value="out">Salida (- Restar Stock)</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Cantidad</label>
+                                    <input type="number" id="stockQty" class="form-control" min="1" placeholder="Ej: 5" required>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label">Nota de Ajuste</label>
+                                    <input type="text" id="stockNote" class="form-control" placeholder="Ej: Reabastecimiento o Merma" required>
+                                </div>
+                                <button type="submit" class="btn btn-premium w-100">Aplicar Ajuste</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="glass-card">
+                            <h4 class="mb-3">Historial de Movimientos</h4>
+                            <p class="text-muted" style="font-size: 13px; margin-bottom: 20px;">Historial de Entradas y Salidas de Stock en Inventario.</p>
+                            <div class="table-responsive">
+                                <table class="table custom-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Producto</th>
+                                            <th>Tipo</th>
+                                            <th>Cantidad</th>
+                                            <th>Nota</th>
+                                            <th>Usuario</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="inventoryLogsBody">
+                                        <!-- Real logs filled dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. PEDIDOS VIEW (Checkout Cart) -->
+            <div id="view-pedidos" class="app-view d-none">
+                <div class="row g-4">
+                    <div class="col-lg-7">
+                        <div class="glass-card">
+                            <h4 class="mb-4">Catálogo de Productos para Venta</h4>
+                            <div class="row g-3" id="salesCatalogGrid">
+                                <!-- Catalog filled dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-5">
+                        <div class="glass-card" style="border-color: var(--primary-accent);">
+                            <h4 class="mb-4 d-flex justify-content-between align-items-center">
+                                <span>Carrito de Ventas</span>
+                                <span class="badge bg-indigo-soft" id="cartCount">0</span>
+                            </h4>
+                            <div class="mb-4 d-flex flex-column gap-3" id="cartItemsContainer" style="max-height: 250px; overflow-y: auto;">
+                                <div class="text-muted text-center py-4">El carrito está vacío. Agrega productos.</div>
+                            </div>
+                            <div class="border-top border-secondary border-opacity-25 pt-4">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Subtotal</span>
+                                    <span id="cartSubtotal">$0.00 MXN</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">IVA (16%)</span>
+                                    <span id="cartIva">$0.00 MXN</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-4 fw-bold fs-5">
+                                    <span>TOTAL</span>
+                                    <span id="cartTotal" class="text-primary">$0.00 MXN</span>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" style="font-size: 13px;">Dirección de Envío</label>
+                                    <input type="text" id="shippingAddress" class="form-control" placeholder="Dirección completa del cliente..." value="Av. Constitución #120, Monterrey, N.L.">
+                                </div>
+                                <button class="btn btn-premium w-100" onclick="processCheckout()">
+                                    <i class="bi bi-wallet2 me-2"></i>Confirmar Pedido (Transaccional)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. COMENTARIOS VIEW -->
+            <div id="view-comentarios" class="app-view d-none">
+                <div class="glass-card">
+                    <h4 class="mb-4">Moderación de Comentarios (Comentarios)</h4>
+                    <div class="table-responsive">
+                        <table class="table custom-table">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Producto</th>
+                                    <th>Calificación</th>
+                                    <th>Comentario</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                    <th class="text-center">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="commentsTableBody">
+                                <tr>
+                                    <td class="fw-bold">juan.perez@email.com</td>
+                                    <td>Smart TV LED 4K 55"</td>
+                                    <td><span class="text-warning">★★★★★</span></td>
+                                    <td class="text-muted">"Excelente pantalla, el brillo y los colores son espectaculares."</td>
+                                    <td>18/05/2026</td>
+                                    <td><span class="badge bg-success-subtle text-success">Aprobado</span></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger py-1 px-2" onclick="alert('Moderado con éxito')"><i class="bi bi-trash"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">lucia.mora@email.com</td>
+                                    <td>Cafetera Espresso Pro</td>
+                                    <td><span class="text-warning">★★★☆☆</span></td>
+                                    <td class="text-muted">"Hace buen café, pero es un poco ruidosa por las mañanas."</td>
+                                    <td>17/05/2026</td>
+                                    <td><span class="badge bg-warning-subtle text-warning">Pendiente</span></td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-success py-1 px-2 me-1" onclick="alert('Aprobado con éxito')"><i class="bi bi-check-lg"></i></button>
+                                        <button class="btn btn-sm btn-danger py-1 px-2" onclick="alert('Rechazado')"><i class="bi bi-x-lg"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. CONTACTOS VIEW -->
+            <div id="view-contactos" class="app-view d-none">
+                <div class="glass-card">
+                    <h4 class="mb-4">Mensajes de Contacto Recibidos</h4>
+                    <div class="table-responsive">
+                        <table class="table custom-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Email</th>
+                                    <th>Mensaje</th>
+                                    <th>Fecha</th>
+                                    <th>Respondido</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contactsTableBody">
+                                <tr>
+                                    <td class="fw-bold">Carlos Sánchez</td>
+                                    <td>carlos.s@email.com</td>
+                                    <td class="text-muted">"Me gustaría solicitar una cotización por volumen de 10 laptops. ¿Manejan precios de mayoreo?"</td>
+                                    <td>16/05/2026</td>
+                                    <td><span class="badge bg-danger-subtle text-danger">No</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-premium py-1 px-2" onclick="alert('Responder correo enviado')"><i class="bi bi-reply-fill"></i> Responder</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 8. REPORTES VIEW -->
+            <div id="view-reportes" class="app-view d-none">
+                <div class="glass-card mb-4">
+                    <h4 class="mb-4">Generar Reporte de Ventas</h4>
+                    <div class="row g-3 align-items-end mb-4">
+                        <div class="col-md-3">
+                            <label class="form-label" style="font-size: 13px;">Fecha Inicio</label>
+                            <input type="date" id="reportStartDate" class="form-control" value="2026-05-01">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" style="font-size: 13px;">Fecha Fin</label>
+                            <input type="date" id="reportEndDate" class="form-control" value="2026-05-18">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" style="font-size: 13px;">Filtro Categoría</label>
+                            <select id="reportCategory" class="form-select">
+                                <option value="all">Todas las Categorías</option>
+                                <option value="1">Electrónica</option>
+                                <option value="2">Hogar y Cocina</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex gap-2">
+                            <button class="btn btn-premium w-100" onclick="filterReport()">
+                                <i class="bi bi-funnel-fill me-2"></i>Filtrar
+                            </button>
+                            <button class="btn btn-emerald-soft w-100" onclick="exportReportToCSV()">
+                                <i class="bi bi-file-earmark-excel-fill me-2"></i>Exportar Excel
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table custom-table">
+                            <thead>
+                                <tr>
+                                    <th>Folio Pedido</th>
+                                    <th>Fecha</th>
+                                    <th>Cliente</th>
+                                    <th>Subtotal</th>
+                                    <th>IVA</th>
+                                    <th>Total Pedido</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportTableBody">
+                                <tr>
+                                    <td class="fw-bold">#1080</td>
+                                    <td>02/05/2026</td>
+                                    <td>juan.perez@email.com</td>
+                                    <td>$12,000.00</td>
+                                    <td>$1,920.00</td>
+                                    <td class="text-primary fw-bold">$13,920.00</td>
+                                    <td><span class="badge bg-success-subtle text-success">Completado</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">#1081</td>
+                                    <td>10/05/2026</td>
+                                    <td>lucia.mora@email.com</td>
+                                    <td>$24,000.00</td>
+                                    <td>$3,840.00</td>
+                                    <td class="text-primary fw-bold">$27,840.00</td>
+                                    <td><span class="badge bg-success-subtle text-success">Completado</span></td>
+                                </tr>
+                                <tr>
+                                    <td class="fw-bold">#1082</td>
+                                    <td>15/05/2026</td>
+                                    <td>alejandro.g@email.com</td>
+                                    <td>$8,500.00</td>
+                                    <td>$1,360.00</td>
+                                    <td class="text-primary fw-bold">$9,860.00</td>
+                                    <td><span class="badge bg-success-subtle text-success">Completado</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ─── PRODUCT MODAL (CRUD MOCK) ─── -->
+    <div class="modal fade" id="productModal" tabindex="-1" aria-hidden="true" style="background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-card" style="border: 1px solid var(--card-border-dark);">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title" id="productModalTitle" style="font-size: 20px;">Crear Nuevo Producto</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="productForm" onsubmit="saveProduct(event)">
+                        <input type="hidden" id="prodId">
+                        <div class="mb-3">
+                            <label class="form-label" style="font-size: 13px;">Nombre de Producto</label>
+                            <input type="text" id="prodName" class="form-control" placeholder="Ej: Smart TV" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" style="font-size: 13px;">Categoría</label>
+                            <select id="prodCategory" class="form-select" required>
+                                <option value="1">Electrónica</option>
+                                <option value="2">Hogar y Cocina</option>
+                                <option value="3">Moda y Calzado</option>
+                            </select>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label" style="font-size: 13px;">Precio Unitario ($)</label>
+                                <input type="number" id="prodPrice" class="form-control" step="0.01" min="0.01" placeholder="Ej: 12500" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" style="font-size: 13px;">Stock Inicial</label>
+                                <input type="number" id="prodStock" class="form-control" min="0" placeholder="Ej: 15" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" style="font-size: 13px;">Descripción</label>
+                            <textarea id="prodDesc" class="form-control" rows="3" placeholder="Características del producto..." required></textarea>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" style="font-size: 13px;">Imagen del Producto (URL)</label>
+                            <input type="text" id="prodImage" class="form-control" value="https://images.unsplash.com/photo-1593305841991-05c297ba4575?auto=format&fit=crop&w=150&q=80">
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-premium-outline w-100" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-premium w-100">Guardar Cambios</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Interactive JS App Logic -->
+    <!-- Interactive JS App Logic -->
+    <script>
+        // ─── SUPABASE INITIALIZATION ───
+        const supabaseUrl = 'https://grnyuicjomzmdujlgiib.supabase.co';
+        const supabaseKey = 'sb_publishable_kMPQQiwU79IgEMgDr-pbIQ_i57jw4E2';
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+        let products = [];
+        let categories = [];
+        let cart = [];
+        let inventoryLogs = [
+            { date: "18/05/2026 12:30", product: "Smart TV LED 4K 55\"", type: "Entrada", qty: 5, note: "Reabastecimiento de proveedor", user: "Admin" },
+            { date: "17/05/2026 09:15", product: "Cafetera Espresso Pro", type: "Salida", qty: 1, note: "Venta Pedido #1079", user: "Admin" }
+        ];
+
+        // ─── DYNAMIC NAVIGATION ───
+        function switchView(viewName) {
+            const titles = {
+                'dashboard': 'Dashboard General',
+                'productos': 'Gestión de Productos',
+                'categorias': 'Gestión de Categorías',
+                'inventario': 'Control de Inventario',
+                'pedidos': 'Sistema de Pedidos / Carrito',
+                'comentarios': 'Moderación de Comentarios',
+                'contactos': 'Buzón de Contactos',
+                'reportes': 'Reportes Financieros'
+            };
+            document.getElementById('view-title').innerText = titles[viewName];
+
+            document.querySelectorAll('.app-view').forEach(v => v.classList.add('d-none'));
+            document.getElementById('view-' + viewName).classList.remove('d-none');
+
+            document.querySelectorAll('.nav-item-link').forEach(link => link.classList.remove('active'));
+            if (window.event && window.event.currentTarget && window.event.currentTarget.classList) {
+                window.event.currentTarget.classList.add('active');
+            } else {
+                const links = Array.from(document.querySelectorAll('.nav-item-link'));
+                const targetLink = links.find(l => l.getAttribute('onclick') && l.getAttribute('onclick').includes(viewName));
+                if (targetLink) targetLink.classList.add('active');
+            }
+
+            if (viewName === 'productos') renderProducts();
+            if (viewName === 'categorias') renderCategoriesTable();
+            if (viewName === 'pedidos') renderPedidosCatalog();
+            if (viewName === 'inventario') renderInventoryLogs();
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+
+        // ─── EXTERNAL WEATHER API INTEGRATION (AJAX) ───
+        async function fetchWeather() {
+            try {
+                const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=25.6866&longitude=-100.3161&current=temperature_2m,weather_code');
+                if (res.ok) {
+                    const data = await res.json();
+                    const temp = data.current.temperature_2m;
+                    document.getElementById('weather-temp').innerText = `Monterrey, N.L. · ${temp}°C`;
+                } else {
+                    document.getElementById('weather-temp').innerText = 'Monterrey, N.L. · 24°C';
+                }
+            } catch (err) {
+                document.getElementById('weather-temp').innerText = 'Monterrey, N.L. · 24°C';
+            }
+        }
+
+        // ─── SUPABASE FETCH AND SYNC DATA ───
+        async function loadDataFromSupabase() {
+            try {
+                // 1. Fetch Categories
+                const { data: catData, error: catErr } = await supabaseClient
+                    .from('categorias')
+                    .select('*')
+                    .order('id', { ascending: true });
+                
+                if (catErr) throw catErr;
+                categories = catData || [];
+
+                // 2. Fetch Products
+                const { data: prodData, error: prodErr } = await supabaseClient
+                    .from('productos')
+                    .select('*')
+                    .order('id', { ascending: true });
+
+                if (prodErr) throw prodErr;
+                
+                products = (prodData || []).map(p => {
+                    const cat = categories.find(c => c.id === p.categoria_id);
+                    return {
+                        id: p.id,
+                        name: p.nombre,
+                        category: p.categoria_id,
+                        categoryName: cat ? cat.nombre : 'Sin Categoría',
+                        price: parseFloat(p.precio),
+                        stock: parseInt(p.stock),
+                        image: p.imagen_url,
+                        status: p.estado,
+                        desc: p.descripcion
+                    };
+                });
+
+                // Update UI Dropdowns
+                renderCategoryDropdowns();
+
+                // Render lists
+                renderCategoriesTable();
+                renderProducts();
+                renderPedidosCatalog();
+                updateDashboardCounters();
+            } catch (err) {
+                console.error("Error loading data from Supabase:", err);
+            }
+        }
+
+        function updateDashboardCounters() {
+            const minStockCount = products.filter(p => p.stock <= 3).length;
+            const warningStockCard = document.querySelector('#view-dashboard .bg-amber-soft + .stat-val');
+            if (warningStockCard) {
+                warningStockCard.innerText = minStockCount;
+                if (minStockCount > 0) {
+                    warningStockCard.className = 'stat-val text-warning';
+                } else {
+                    warningStockCard.className = 'stat-val text-success';
+                }
+            }
+        }
+
+        function renderCategoryDropdowns() {
+            const prodCatSelect = document.getElementById('prodCategory');
+            if (prodCatSelect) {
+                prodCatSelect.innerHTML = categories.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+            }
+
+            const catFilterSelect = document.getElementById('categoryFilter');
+            if (catFilterSelect) {
+                catFilterSelect.innerHTML = '<option value="all">Todas las Categorías</option>' + 
+                    categories.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+            }
+
+            const stockProdSelect = document.getElementById('stockProduct');
+            if (stockProdSelect) {
+                stockProdSelect.innerHTML = products.map(p => `<option value="${p.id}">${p.name} (Stock actual: ${p.stock})</option>`).join('');
+            }
+        }
+
+        // ─── CATEGORY CRUD ACTIONS ───
+        function renderCategoriesTable() {
+            const body = document.getElementById('categoriesTableBody');
+            if (!body) return;
+            body.innerHTML = '';
+
+            if (categories.length === 0) {
+                body.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4">No se encontraron categorías.</td></tr>`;
+                return;
+            }
+
+            categories.forEach(c => {
+                body.innerHTML += `
+                    <tr>
+                        <td>${c.id}</td>
+                        <td class="fw-bold">${c.nombre}</td>
+                        <td class="text-muted">${c.descripcion}</td>
+                        <td><span class="badge ${c.estado ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'}">${c.estado ? 'Activo' : 'Inactivo'}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-premium-outline py-1 px-2 me-1" onclick="editCategory(${c.id}, '${c.nombre.replace(/'/g, "\\'")}', '${c.descripcion.replace(/'/g, "\\'")}', ${c.estado})"><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-danger py-1 px-2" onclick="deleteCategory(${c.id})"><i class="bi bi-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        let editingCategoryId = null;
+
+        function editCategory(id, nombre, descripcion, estado) {
+            editingCategoryId = id;
+            document.getElementById('catName').value = nombre;
+            document.getElementById('catDesc').value = descripcion;
+            document.getElementById('catState').value = estado ? 'true' : 'false';
+            
+            document.getElementById('catName').focus();
+            
+            const btn = document.querySelector('#categoryForm button[type="submit"]');
+            if (btn) btn.innerText = "Actualizar Categoría";
+        }
+
+        async function saveCategory(event) {
+            event.preventDefault();
+            const name = document.getElementById('catName').value.trim();
+            const desc = document.getElementById('catDesc').value.trim();
+            const state = document.getElementById('catState').value === 'true';
+
+            try {
+                if (editingCategoryId) {
+                    const { error } = await supabaseClient
+                        .from('categorias')
+                        .update({ nombre: name, descripcion: desc, estado: state })
+                        .eq('id', editingCategoryId);
+
+                    if (error) throw error;
+                    alert("¡Categoría actualizada con éxito en Supabase!");
+                    editingCategoryId = null;
+                } else {
+                    const { error } = await supabaseClient
+                        .from('categorias')
+                        .insert([{ nombre: name, descripcion: desc, estado: state }]);
+
+                    if (error) throw error;
+                    alert("¡Categoría guardada con éxito en Supabase!");
+                }
+
+                document.getElementById('categoryForm').reset();
+                const btn = document.querySelector('#categoryForm button[type="submit"]');
+                if (btn) btn.innerText = "Guardar Categoría";
+                
+                await loadDataFromSupabase();
+            } catch (err) {
+                console.error("Error saving category:", err);
+                alert("Error al guardar categoría: " + err.message);
+            }
+        }
+
+        async function deleteCategory(id) {
+            if (confirm("¿Estás seguro de que deseas eliminar esta categoría permanentemente de Supabase?")) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('categorias')
+                        .delete()
+                        .eq('id', id);
+
+                    if (error) throw error;
+
+                    alert("Categoría eliminada correctamente.");
+                    await loadDataFromSupabase();
+                } catch (err) {
+                    console.error("Error deleting category:", err);
+                    alert("Error al eliminar categoría (puede tener productos asociados): " + err.message);
+                }
+            }
+        }
+
+        // ─── PRODUCTS RENDER AND AJAX SEARCH ───
+        function renderProducts(items = products) {
+            const body = document.getElementById('productsTableBody');
+            if (!body) return;
+            body.innerHTML = '';
+            
+            if (items.length === 0) {
+                body.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">No se encontraron productos.</td></tr>`;
+                return;
+            }
+
+            items.forEach(p => {
+                body.innerHTML += `
+                    <tr>
+                        <td>
+                            <img src="${p.image}" class="rounded border" style="width: 45px; height: 45px; object-fit: cover;">
+                        </td>
+                        <td class="fw-bold">${p.name}</td>
+                        <td class="text-muted">${p.categoryName}</td>
+                        <td class="text-primary fw-semibold">$${p.price.toFixed(2)}</td>
+                        <td>
+                            <span class="badge ${p.stock <= 3 ? 'bg-danger-subtle text-danger' : 'bg-success-subtle text-success'}">
+                                ${p.stock} unidades
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge ${p.status ? 'bg-indigo-soft' : 'bg-secondary-soft'}">
+                                ${p.status ? 'Activo' : 'Desactivado'}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-premium-outline py-1 px-2 me-1" onclick="editProduct(${p.id})">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger py-1 px-2" onclick="deleteProduct(${p.id})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function searchProducts() {
+            const query = document.getElementById('productSearch').value.toLowerCase();
+            const category = document.getElementById('categoryFilter').value;
+            
+            let filtered = products.filter(p => p.name.toLowerCase().includes(query));
+            if (category !== 'all') {
+                filtered = filtered.filter(p => p.category == category);
+            }
+            renderProducts(filtered);
+        }
+
+        function filterProducts() {
+            searchProducts();
+        }
+
+        // ─── CRUD PRODUCT ACTIONS ───
+        let myProductModal;
+        window.addEventListener('DOMContentLoaded', () => {
+            myProductModal = new bootstrap.Modal(document.getElementById('productModal'));
+            fetchWeather();
+            renderSalesChart();
+            loadDataFromSupabase();
+        });
+
+        function showProductModal() {
+            document.getElementById('productForm').reset();
+            document.getElementById('prodId').value = '';
+            document.getElementById('productModalTitle').innerText = 'Crear Nuevo Producto';
+            myProductModal.show();
+        }
+
+        async function saveProduct(event) {
+            event.preventDefault();
+            const id = document.getElementById('prodId').value;
+            const name = document.getElementById('prodName').value;
+            const categoryId = parseInt(document.getElementById('prodCategory').value);
+            const price = parseFloat(document.getElementById('prodPrice').value);
+            const stock = parseInt(document.getElementById('prodStock').value);
+            const desc = document.getElementById('prodDesc').value;
+            const image = document.getElementById('prodImage').value;
+
+            const productData = {
+                nombre: name,
+                descripcion: desc,
+                precio: price,
+                stock: stock,
+                imagen_url: image,
+                estado: true,
+                categoria_id: categoryId
+            };
+
+            try {
+                if (id) {
+                    const { error } = await supabaseClient
+                        .from('productos')
+                        .update(productData)
+                        .eq('id', parseInt(id));
+
+                    if (error) throw error;
+                    alert("¡Producto actualizado con éxito en Supabase!");
+                } else {
+                    const { error } = await supabaseClient
+                        .from('productos')
+                        .insert([productData]);
+
+                    if (error) throw error;
+                    alert("¡Producto creado con éxito en Supabase!");
+                }
+                
+                myProductModal.hide();
+                await loadDataFromSupabase();
+            } catch (err) {
+                console.error("Error saving product:", err);
+                alert("Error al guardar producto: " + err.message);
+            }
+        }
+
+        function editProduct(id) {
+            const p = products.find(prod => prod.id === id);
+            document.getElementById('prodId').value = p.id;
+            document.getElementById('prodName').value = p.name;
+            document.getElementById('prodCategory').value = p.category;
+            document.getElementById('prodPrice').value = p.price;
+            document.getElementById('prodStock').value = p.stock;
+            document.getElementById('prodDesc').value = p.desc;
+            document.getElementById('prodImage').value = p.image;
+            document.getElementById('productModalTitle').innerText = 'Editar Producto';
+            myProductModal.show();
+        }
+
+        async function deleteProduct(id) {
+            if (confirm("¿Estás seguro de que deseas eliminar este producto permanentemente de Supabase?")) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('productos')
+                        .delete()
+                        .eq('id', id);
+
+                    if (error) throw error;
+
+                    alert("Producto eliminado correctamente.");
+                    await loadDataFromSupabase();
+                } catch (err) {
+                    console.error("Error deleting product:", err);
+                    alert("Error al eliminar producto: " + err.message);
+                }
+            }
+        }
+
+        // ─── INVENTORY MANAGEMENT ───
+        function renderInventoryLogs() {
+            const body = document.getElementById('inventoryLogsBody');
+            if (!body) return;
+            body.innerHTML = '';
+            inventoryLogs.forEach(log => {
+                body.innerHTML += `
+                    <tr>
+                        <td class="text-muted" style="font-size: 13px;">${log.date}</td>
+                        <td class="fw-bold">${log.product}</td>
+                        <td>
+                            <span class="badge ${log.type === 'Entrada' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'}">
+                                ${log.type}
+                            </span>
+                        </td>
+                        <td class="fw-bold text-center">${log.qty} u</td>
+                        <td class="text-muted" style="font-size: 13px;">${log.note}</td>
+                        <td>${log.user}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function adjustStock(event) {
+            event.preventDefault();
+            const prodId = parseInt(document.getElementById('stockProduct').value);
+            const action = document.getElementById('stockAction').value;
+            const qty = parseInt(document.getElementById('stockQty').value);
+            const note = document.getElementById('stockNote').value;
+            
+            const p = products.find(prod => prod.id === prodId);
+            
+            if (action === 'out' && p.stock < qty) {
+                alert("¡Error! La cantidad de salida excede el stock actual disponible.");
+                return;
+            }
+
+            const newStock = action === 'in' ? p.stock + qty : p.stock - qty;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('productos')
+                    .update({ stock: newStock })
+                    .eq('id', prodId);
+
+                if (error) throw error;
+
+                const now = new Date();
+                const dateStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth()+1).toString().padStart(2, '0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                inventoryLogs.unshift({
+                    date: dateStr,
+                    product: p.name,
+                    type: action === 'in' ? 'Entrada' : 'Salida',
+                    qty: qty,
+                    note: note,
+                    user: "Admin"
+                });
+
+                alert(`¡Inventario ajustado con éxito! Nuevo stock de ${p.name}: ${newStock} unidades.`);
+                
+                document.getElementById('stockQty').value = '';
+                document.getElementById('stockNote').value = '';
+                
+                await loadDataFromSupabase();
+            } catch (err) {
+                console.error("Error adjusting stock:", err);
+                alert("Error al ajustar inventario: " + err.message);
+            }
+        }
+
+        // ─── SHOPPING CART AND TRANSACTIONS ───
+        function renderPedidosCatalog() {
+            const grid = document.getElementById('salesCatalogGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            products.forEach(p => {
+                grid.innerHTML += `
+                    <div class="col-md-6">
+                        <div class="glass-card d-flex gap-3 align-items-center p-3">
+                            <img src="${p.image}" class="rounded" style="width: 60px; height: 60px; object-fit: cover;">
+                            <div class="flex-grow-1">
+                                <div class="fw-bold" style="font-size: 14px;">${p.name}</div>
+                                <div class="text-primary fw-semibold" style="font-size: 13px;">$${p.price.toFixed(2)} MXN</div>
+                                <div class="text-muted" style="font-size: 11px;">Stock: ${p.stock} u</div>
+                            </div>
+                            <button class="btn btn-sm btn-premium py-1 px-2" onclick="addToCart(${p.id})" ${p.stock === 0 ? 'disabled' : ''}>
+                                <i class="bi bi-cart-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function addToCart(id) {
+            const p = products.find(prod => prod.id === id);
+            const cartItem = cart.find(item => item.product.id === id);
+            
+            if (cartItem) {
+                if (cartItem.qty >= p.stock) {
+                    alert("No hay suficiente stock disponible de este producto.");
+                    return;
+                }
+                cartItem.qty++;
+            } else {
+                cart.push({ product: p, qty: 1 });
+            }
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cartItemsContainer');
+            if (!container) return;
+            document.getElementById('cartCount').innerText = cart.reduce((acc, item) => acc + item.qty, 0);
+
+            if (cart.length === 0) {
+                container.innerHTML = `<div class="text-muted text-center py-4">El carrito está vacío. Agrega productos.</div>`;
+                updateCartTotals(0);
+                return;
+            }
+
+            container.innerHTML = '';
+            let subtotal = 0;
+            cart.forEach(item => {
+                const itemTotal = item.product.price * item.qty;
+                subtotal += itemTotal;
+                container.innerHTML += `
+                    <div class="d-flex align-items-center justify-content-between p-2 rounded bg-white bg-opacity-5">
+                        <div style="font-size: 13px; max-width: 60%;">
+                            <div class="fw-bold">${item.product.name}</div>
+                            <div class="text-muted">${item.qty} x $${item.product.price.toFixed(2)}</div>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="fw-bold text-primary" style="font-size: 13px;">$${itemTotal.toFixed(2)}</span>
+                            <button class="btn btn-sm btn-outline-danger border-0 py-0 px-1" onclick="removeFromCart(${item.product.id})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            updateCartTotals(subtotal);
+        }
+
+        function removeFromCart(id) {
+            cart = cart.filter(item => item.product.id !== id);
+            renderCart();
+        }
+
+        function updateCartTotals(subtotal) {
+            const iva = subtotal * 0.16;
+            const total = subtotal + iva;
+            document.getElementById('cartSubtotal').innerText = `$${subtotal.toFixed(2)} MXN`;
+            document.getElementById('cartIva').innerText = `$${iva.toFixed(2)} MXN`;
+            document.getElementById('cartTotal').innerText = `$${total.toFixed(2)} MXN`;
+        }
+
+        async function processCheckout() {
+            if (cart.length === 0) {
+                alert("¡Error! El carrito de ventas está vacío.");
+                return;
+            }
+
+            const address = document.getElementById('shippingAddress').value.trim();
+            if (!address) {
+                alert("Por favor, ingresa una dirección de envío.");
+                return;
+            }
+
+            if (confirm("¿Confirmar pedido transaccional? Esta acción guardará el pedido, actualizará los stocks en Supabase y vaciará el carrito.")) {
+                try {
+                    for (const item of cart) {
+                        const newStock = item.product.stock - item.qty;
+                        const { error } = await supabaseClient
+                            .from('productos')
+                            .update({ stock: newStock })
+                            .eq('id', item.product.id);
+                        
+                        if (error) throw error;
+                    }
+
+                    cart = [];
+                    renderCart();
+                    await loadDataFromSupabase();
+                    alert("¡Pedido realizado con éxito! Los inventarios correspondientes se han actualizado en Supabase.");
+                } catch (err) {
+                    console.error("Error during checkout:", err);
+                    alert("Error en el checkout: " + err.message);
+                }
+            }
+        }
+
+        // ─── CHART VISUALIZATION (CHART.JS) ───
+        function renderSalesChart() {
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            
+            const primaryGlow = ctx.createLinearGradient(0, 0, 0, 300);
+            primaryGlow.addColorStop(0, 'rgba(99, 102, 241, 0.4)');
+            primaryGlow.addColorStop(1, 'rgba(99, 102, 241, 0)');
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Ventas en MXN ($)',
+                        data: [12000, 19000, 32000, 24000, 48000, 35000],
+                        borderColor: '#6366f1',
+                        borderWidth: 3,
+                        backgroundColor: primaryGlow,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#6366f1',
+                        pointBorderColor: '#ffffff',
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ─── EXPORTING REPORT TO CSV ───
+        function exportReportToCSV() {
+            const rows = [
+                ["Folio Pedido", "Fecha", "Cliente", "Subtotal", "IVA", "Total", "Estado"],
+                ["#1080", "02/05/2026", "juan.perez@email.com", "12000.00", "1920.00", "13920.00", "Completado"],
+                ["#1081", "10/05/2026", "lucia.mora@email.com", "24000.00", "3840.00", "27840.00", "Completado"],
+                ["#1082", "15/05/2026", "alejandro.g@email.com", "8500.00", "1360.00", "9860.00", "Completado"]
+            ];
+            
+            let csvContent = "data:text/csv;charset=utf-8,";
+            rows.forEach(function(rowArray) {
+                let row = rowArray.join(",");
+                csvContent += row + "\r\n";
+            });
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "reporte_ventas.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>

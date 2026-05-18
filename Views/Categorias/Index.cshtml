@@ -1,0 +1,102 @@
+@model List<Categoria>
+@{
+    ViewData["Title"] = "Gestión de Categorías";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="font-outfit fw-bold mb-0 text-white"><i class="fa-solid fa-tags text-indigo-soft me-2"></i> Control de Categorías</h2>
+    <a asp-action="Crear" class="btn-premium">
+        <i class="fa-solid fa-plus"></i> Nueva Categoría
+    </a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="glass-card text-center p-5">
+        <i class="fa-solid fa-tag text-secondary-dark mb-3" style="font-size: 56px;"></i>
+        <h3 class="text-secondary-dark font-outfit">No hay categorías registradas</h3>
+        <p class="text-muted small">Crea una categoría para empezar a organizar tus productos.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive-custom">
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>Código ID</th>
+                    <th>Nombre de Categoría</th>
+                    <th>Descripción</th>
+                    <th>Estado</th>
+                    <th class="text-end">Acciones Administrativas</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Model)
+                {
+                    var statusBadge = c.Estado ? "bg-emerald-soft" : "bg-rose-soft";
+                    var statusText = c.Estado ? "Activa" : "Inactiva";
+                    
+                    <tr id="cat-row-@c.Id">
+                        <td class="text-muted small">#@c.Id</td>
+                        <td>
+                            <strong class="text-white small">@c.Nombre</strong>
+                        </td>
+                        <td style="max-width: 350px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            <span class="text-secondary-dark small">@c.Descripcion</span>
+                        </td>
+                        <td>
+                            <span class="badge @statusBadge fw-semibold">@statusText</span>
+                        </td>
+                        <td class="text-end">
+                            <div class="d-inline-flex gap-2">
+                                <a asp-action="Editar" asp-route-id="@c.Id" class="btn btn-premium-outline btn-sm p-2 px-3 border-secondary-dark text-white" title="Editar Categoría">
+                                    <i class="fa-solid fa-pen-to-square"></i> Editar
+                                </a>
+                                <button type="button" class="btn btn-premium-outline btn-sm p-2 px-3 border-danger text-danger bg-rose-soft bg-opacity-10" 
+                                        onclick="eliminarCategoriaAJAX(@c.Id)" title="Eliminar Categoría">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        function eliminarCategoriaAJAX(id) {
+            if (!confirm("¿Estás seguro de que deseas eliminar esta categoría? Si contiene productos activos, el sistema registrará un error o advertencia.")) {
+                return;
+            }
+
+            fetch(`/Categorias/Eliminar/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Remover fila con desvanecimiento
+                    const row = document.getElementById(`cat-row-${id}`);
+                    if (row) {
+                        row.style.opacity = '0';
+                        row.style.transform = 'translateX(20px)';
+                        setTimeout(() => {
+                            row.remove();
+                        }, 300);
+                    }
+                } else {
+                    alert("Error eliminando categoría: " + data.message);
+                }
+            })
+            .catch(() => alert("Error de comunicación con el servidor al eliminar."));
+        }
+    </script>
+}

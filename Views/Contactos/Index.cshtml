@@ -1,0 +1,111 @@
+@model List<Contacto>
+@{
+    ViewData["Title"] = "Buzón de Consultas";
+}
+
+<h2 class="font-outfit fw-bold mb-4 text-white"><i class="fa-solid fa-envelope-open-text text-indigo-soft me-2"></i> Buzón de Mensajes de Contacto</h2>
+
+<div class="glass-card mb-4 p-3 d-flex justify-content-between align-items-center">
+    <span class="text-secondary-dark small">Total Mensajes Recibidos: <strong>@Model.Count</strong></span>
+    <span class="badge bg-amber-soft px-3 py-2 fw-semibold" style="font-size: 11px;">Pendientes de Gestión</span>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="glass-card text-center p-5">
+        <i class="fa-solid fa-face-smile text-success mb-3" style="font-size: 56px;"></i>
+        <h3 class="text-secondary-dark font-outfit">Buzón de consultas vacío</h3>
+        <p class="text-muted small">No hay mensajes entrantes pendientes por responder.</p>
+    </div>
+}
+else
+{
+    <div class="table-responsive-custom">
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Email de Contacto</th>
+                    <th>Consulta / Mensaje</th>
+                    <th>Fecha de Ingreso</th>
+                    <th>Estado</th>
+                    <th class="text-end">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var msg in Model)
+                {
+                    var badgeClass = msg.Respondido ? "bg-emerald-soft" : "bg-amber-soft";
+                    
+                    <tr id="message-row-@msg.Id">
+                        <td>
+                            <strong class="text-white small d-block">@msg.Nombre</strong>
+                        </td>
+                        <td class="text-white small">@msg.Email</td>
+                        <td style="max-width: 400px; white-space: normal; word-wrap: break-word;">
+                            <span class="text-secondary-dark small">@msg.Mensaje</span>
+                        </td>
+                        <td class="text-secondary-dark small">@msg.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>
+                            <span class="badge @badgeClass fw-semibold" id="msg-badge-@msg.Id">
+                                @(msg.Respondido ? "Respondido" : "Pendiente")
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            @if (!msg.Respondido)
+                            {
+                                <button type="button" class="btn btn-premium btn-sm p-2 px-3 bg-emerald-soft text-success border-0" 
+                                        id="btn-resp-@msg.Id" onclick="marcarGestionado(@msg.Id)" title="Marcar como gestionado">
+                                    <i class="fa-solid fa-envelope-circle-check"></i> Resolver
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-premium-outline btn-sm p-2 px-3 border-secondary-dark text-muted" disabled>
+                                    <i class="fa-solid fa-envelope-circle-check"></i> Gestionado
+                                </button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        function marcarGestionado(id) {
+            fetch('/Contactos/Responder', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                },
+                body: `id=${id}`
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Actualizar etiqueta
+                    const badge = document.getElementById(`msg-badge-${id}`);
+                    if (badge) {
+                        badge.className = "badge bg-emerald-soft fw-semibold";
+                        badge.textContent = "Respondido";
+                    }
+
+                    // Deshabilitar botón
+                    const btn = document.getElementById(`btn-resp-${id}`);
+                    if (btn) {
+                        btn.className = "btn btn-premium-outline btn-sm p-2 px-3 border-secondary-dark text-muted";
+                        btn.disabled = true;
+                        btn.innerHTML = `<i class="fa-solid fa-envelope-circle-check"></i> Gestionado`;
+                    }
+                } else {
+                    alert("Error al guardar cambios: " + data.message);
+                }
+            })
+            .catch(() => alert("Error de conexión al guardar cambios."));
+        }
+    </script>
+}

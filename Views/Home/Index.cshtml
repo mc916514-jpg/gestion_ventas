@@ -1,0 +1,296 @@
+@model List<Producto>
+@{
+    ViewData["Title"] = "Inicio";
+    var categories = ViewBag.Categorias as List<Categoria> ?? new List<Categoria>();
+    var selectedCat = ViewBag.SelectedCategoria as int? ?? 0;
+    var searchText = ViewBag.SearchText as string ?? "";
+}
+
+<!-- SECCIÓN HÉROE / BANNER PRINCIPAL DE BIENVENIDA -->
+<div class="glass-card card-glow mb-5 p-5 position-relative text-center text-md-start">
+    <div class="row align-items-center">
+        <div class="col-md-7">
+            <span class="badge bg-indigo-soft mb-3" style="font-size: 12px; font-weight: 600; padding: 6px 12px;">¡Bienvenidos a NexoComercial!</span>
+            <h1 class="display-5 fw-bold mb-3" style="font-family: 'Outfit', sans-serif; letter-spacing: -1px; background: linear-gradient(135deg, #fff 0%, #818cf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                La experiencia de compra más rápida y segura.
+            </h1>
+            <p class="text-secondary-dark mb-4" style="font-size: 16px; max-width: 500px;">
+                Catálogos interactivos, inventario administrado en tiempo real, cotización meteorológica y moderación integrada de reseñas en un solo lugar.
+            </p>
+            <a href="#catalogo" class="btn-premium py-3 px-4">
+                <i class="fa-solid fa-bag-shopping"></i> Explorar Catálogo
+            </a>
+        </div>
+        <div class="col-md-5 d-none d-md-block text-center position-relative">
+            <!-- Representación geométrica o abstracta de producto con resplandor neón -->
+            <div style="width: 250px; height: 250px; background: linear-gradient(135deg, #6366f1 0%, #10b981 100%); border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; filter: blur(5px); opacity: 0.15; position: absolute; top: 0; left: 50px; animation: morph 8s ease-in-out infinite;"></div>
+            <i class="fa-solid fa-laptop-code text-indigo-soft" style="font-size: 160px; filter: drop-shadow(0 0 20px var(--primary-accent));"></i>
+        </div>
+    </div>
+</div>
+
+<!-- ANCLA DEL CATÁLOGO -->
+<div id="catalogo" class="pt-2"></div>
+
+<!-- BARRA DE BÚSQUEDA Y FILTRADO -->
+<div class="glass-card mb-4 p-4">
+    <form asp-controller="Home" asp-action="Index" method="get">
+        <div class="row g-3 align-items-center">
+            
+            <!-- Barra de búsqueda literal -->
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-end-0 border-secondary-dark text-secondary-dark" style="border: 1px solid var(--card-border-dark);">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </span>
+                    <input type="text" name="search" class="form-control border-start-0" placeholder="Buscar productos..." value="@searchText" style="border: 1px solid var(--card-border-dark);" />
+                </div>
+            </div>
+
+            <!-- Selector de categorías -->
+            <div class="col-md-4">
+                <select name="categoriaId" class="form-select" onchange="this.form.submit()" style="border: 1px solid var(--card-border-dark);">
+                    <option value="">Todas las Categorías</option>
+                    @foreach (var cat in categories)
+                    {
+                        if (selectedCat == cat.Id)
+                        {
+                            <option value="@cat.Id" selected>@cat.Nombre</option>
+                        }
+                        else
+                        {
+                            <option value="@cat.Id">@cat.Nombre</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn-premium flex-grow-1 justify-content-center">
+                    <i class="fa-solid fa-filter"></i> Filtrar
+                </button>
+                @if (selectedCat > 0 || !string.IsNullOrEmpty(searchText))
+                {
+                    <a asp-controller="Home" asp-action="Index" class="btn-premium-outline" title="Limpiar Filtros">
+                        <i class="fa-solid fa-arrow-rotate-left"></i>
+                    </a>
+                }
+            </div>
+
+        </div>
+    </form>
+</div>
+
+<!-- PILLS DE CATEGORÍAS RÁPIDAS (Estética visual impecable) -->
+<div class="d-flex flex-wrap gap-2 mb-4">
+    <a asp-controller="Home" asp-action="Index" class="btn-premium-outline btn-sm rounded-pill @(selectedCat == 0 ? "active bg-indigo-soft border-indigo" : "")">
+        <i class="fa-solid fa-border-all me-1"></i> Todos
+    </a>
+    @foreach (var cat in categories)
+    {
+        <a asp-controller="Home" asp-action="Index" asp-route-categoriaId="@cat.Id" asp-route-search="@searchText"
+           class="btn-premium-outline btn-sm rounded-pill @(selectedCat == cat.Id ? "active bg-indigo-soft border-indigo" : "")">
+            <i class="fa-solid fa-tag me-1"></i> @cat.Nombre
+        </a>
+    }
+</div>
+
+<!-- GRILLA DE PRODUCTOS -->
+<h3 class="mb-4 font-outfit fw-bold">Productos Disponibles</h3>
+
+@if (!Model.Any())
+{
+    <div class="glass-card text-center p-5 mb-5">
+        <i class="fa-solid fa-box-open text-secondary-dark mb-3" style="font-size: 48px;"></i>
+        <h4 class="text-secondary-dark">No se encontraron productos</h4>
+        <p class="text-muted small">Intenta modificando tus términos de búsqueda o filtros seleccionados.</p>
+    </div>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
+        @foreach (var prod in Model)
+        {
+            // Imagen de fallback premium
+            var imgUrl = string.IsNullOrEmpty(prod.ImagenUrl) 
+                ? $"https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&auto=format&fit=crop&q=80" 
+                : prod.ImagenUrl;
+
+            <div class="col">
+                <div class="glass-card product-card h-100 d-flex flex-column">
+                    
+                    <!-- Contenedor Imagen + Stock Badge -->
+                    <div class="product-img-wrapper">
+                        @if (prod.Stock <= 0)
+                        {
+                            <span class="badge-stock-out"><i class="fa-solid fa-triangle-exclamation"></i> Sin Stock</span>
+                        }
+                        else if (prod.Stock <= 5)
+                        {
+                            <span class="badge-premium bg-warning text-dark"><i class="fa-solid fa-clock-rotate-left"></i> ¡Últimas @prod.Stock!</span>
+                        }
+                        else
+                        {
+                            <span class="badge-premium"><i class="fa-solid fa-circle-check"></i> Disponible</span>
+                        }
+                        <img src="@imgUrl" class="product-img" alt="@prod.Nombre" loading="lazy" />
+                    </div>
+
+                    <!-- Detalles del Producto -->
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-indigo-soft fw-bold small text-uppercase">@prod.CategoriaNombre</span>
+                        <div class="small text-amber-soft">
+                            <i class="fa-solid fa-star"></i> 4.8
+                        </div>
+                    </div>
+
+                    <h4 class="mb-2 font-outfit" style="font-size: 18px; font-weight: 600;">@prod.Nombre</h4>
+                    <p class="text-muted small flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 38px;">
+                        @prod.Descripcion
+                    </p>
+
+                    <!-- Precio y Compra -->
+                    <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top" style="border-color: var(--card-border-dark) !important;">
+                        <div>
+                            <div class="small text-secondary-dark">Precio</div>
+                            <span class="fs-4 fw-bold text-white">$@prod.Precio.ToString("N2")</span>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <a asp-controller="Home" asp-action="Details" asp-route-id="@prod.Id" class="btn-premium-outline p-2 px-3" title="Ver Detalles">
+                                <i class="fa-solid fa-eye"></i>
+                            </a>
+                            
+                            @if (prod.Stock > 0)
+                            {
+                                <button type="button" class="btn-premium p-2 px-3" onclick="agregarAlCarritoAJAX(@prod.Id)" title="Agregar al Carrito">
+                                    <i class="fa-solid fa-cart-plus"></i>
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn-premium-outline p-2 px-3 border-secondary-dark text-muted" disabled>
+                                    <i class="fa-solid fa-cart-plus"></i>
+                                </button>
+                            }
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<!-- SECCIÓN DE CONTACTO GLASMORPHIC -->
+<div class="row justify-content-center pt-4">
+    <div class="col-lg-8">
+        <div class="glass-card card-glow p-5">
+            <div class="row align-items-center">
+                <div class="col-md-5 mb-4 mb-md-0 text-center text-md-start">
+                    <h3 class="font-outfit fw-bold mb-3">¿Tienes alguna consulta?</h3>
+                    <p class="text-secondary-dark mb-4">Escríbenos directamente y nuestro equipo administrativo se pondrá en contacto contigo a la brevedad.</p>
+                    
+                    <div class="d-flex align-items-center gap-3 text-secondary-dark small mb-2">
+                        <i class="fa-solid fa-phone text-indigo-soft"></i> +34 912 345 678
+                    </div>
+                    <div class="d-flex align-items-center gap-3 text-secondary-dark small">
+                        <i class="fa-solid fa-map-location-dot text-indigo-soft"></i> Paseo de la Castellana, Madrid
+                    </div>
+                </div>
+                
+                <div class="col-md-7">
+                    <form asp-controller="Home" asp-action="AgregarContacto" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="mb-3">
+                            <input type="text" name="Nombre" class="form-control" placeholder="Nombre completo" required />
+                        </div>
+                        <div class="mb-3">
+                            <input type="email" name="Email" class="form-control" placeholder="Correo electrónico" required />
+                        </div>
+                        <div class="mb-3">
+                            <textarea name="Mensaje" rows="3" class="form-control" placeholder="Escribe aquí tu consulta..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn-premium w-100 justify-content-center">
+                            <i class="fa-solid fa-paper-plane me-2"></i> Enviar Mensaje
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST FLOTANTE DE NOTIFICACIONES AJAX -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
+    <div id="cartToast" class="toast align-items-center border-0 alert-premium alert-premium-success" role="alert" aria-live="assertive" aria-atomic="true" style="display:none; min-width: 250px;">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="fa-solid fa-circle-check me-2"></i> <span id="cartToastMessage">Producto agregado al carrito.</span>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="document.getElementById('cartToast').style.display='none'"></button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Función AJAX optimizada para agregar productos al carrito sin recargar la página
+        function agregarAlCarritoAJAX(productoId) {
+            fetch('/Pedidos/AgregarAlCarrito', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                },
+                body: `id=${productoId}&cantidad=1`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Actualizar el contador del badge en el Layout
+                    let badge = document.getElementById("cartBadgeLayout");
+                    if (!badge) {
+                        // Si no existía, crearlo dinámicamente
+                        const link = document.querySelector("a[href='/Pedidos/Cart']");
+                        if (link) {
+                            badge = document.createElement("span");
+                            badge.id = "cartBadgeLayout";
+                            badge.className = "badge bg-indigo-soft ms-auto";
+                            link.appendChild(badge);
+                        }
+                    }
+                    if (badge) {
+                        badge.textContent = data.cartCount;
+                    }
+
+                    // Mostrar toast flotante elegante
+                    const toast = document.getElementById("cartToast");
+                    const toastMsg = document.getElementById("cartToastMessage");
+                    toastMsg.textContent = data.message || "Producto agregado al carrito.";
+                    toast.style.display = "block";
+                    
+                    // Ocultar automáticamente a los 3 segundos
+                    setTimeout(() => {
+                        toast.style.display = "none";
+                    }, 3000);
+                } else {
+                    alert("Error: " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error("Error agregando al carrito:", error);
+                alert("Hubo un problema al conectar con el servidor.");
+            });
+        }
+    </script>
+
+    <style>
+        @@keyframes morph {
+            0% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; }
+            50% { border-radius: 70% 30% 30% 70% / 70% 70% 30% 30%; }
+            100% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; }
+        }
+    </style>
+}

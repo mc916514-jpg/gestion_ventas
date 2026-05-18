@@ -1,0 +1,246 @@
+@using System.Text.Json
+@model List<GestionComercial.Controllers.PedidosController.CartItem>
+@{
+    ViewData["Title"] = "Carrito de Compras";
+    var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
+    var subtotal = Model.Sum(i => i.Precio * i.Cantidad);
+    var iva = subtotal * 0.21m;
+    var total = subtotal + iva;
+}
+
+<h2 class="font-outfit fw-bold mb-4 text-white"><i class="fa-solid fa-cart-flatbed-suitcases text-indigo-soft me-2"></i> Tu Carrito de Compras</h2>
+
+@if (!Model.Any())
+{
+    <div class="glass-card text-center p-5">
+        <i class="fa-solid fa-basket-shopping text-secondary-dark mb-3" style="font-size: 56px;"></i>
+        <h3 class="text-secondary-dark font-outfit">El carrito está vacío</h3>
+        <p class="text-muted small mb-4">Parece que aún no has agregado ningún producto a tu lista.</p>
+        <a asp-controller="Home" asp-action="Index" class="btn-premium py-3 px-4">
+            <i class="fa-solid fa-store me-1"></i> Ir a la Tienda
+        </a>
+    </div>
+}
+else
+{
+    <div class="row g-4">
+        
+        <!-- DETALLES DE PRODUCTOS -->
+        <div class="col-lg-8">
+            <div class="d-flex flex-column gap-3">
+                @foreach (var item in Model)
+                {
+                    var itemSubtotal = item.Precio * item.Cantidad;
+                    
+                    <div class="glass-card p-4 d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-4" id="cart-row-@item.ProductoId">
+                        
+                        <div class="d-flex align-items-center gap-3">
+                            <!-- Thumbnail -->
+                            <div class="product-img-wrapper m-0" style="width: 70px; padding-top: 70px; border-radius: 8px;">
+                                <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=200&auto=format&fit=crop&q=80" class="product-img" alt="@item.Nombre" />
+                            </div>
+                            <div>
+                                <h5 class="mb-1 text-white font-outfit" style="font-size: 16px;">@item.Nombre</h5>
+                                <span class="text-indigo-soft small">Precio: $@item.Precio.ToString("N2")</span>
+                            </div>
+                        </div>
+
+                        <!-- Selector de cantidades AJAX -->
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="button" class="btn btn-premium-outline p-1 px-2 btn-sm" onclick="ajustarCantidad(@item.ProductoId, -1)">
+                                <i class="fa-solid fa-minus" style="font-size: 11px;"></i>
+                            </button>
+                            <span class="fw-bold px-2 text-white" id="qty-val-@item.ProductoId">@item.Cantidad</span>
+                            <button type="button" class="btn btn-premium-outline p-1 px-2 btn-sm" onclick="ajustarCantidad(@item.ProductoId, 1)">
+                                <i class="fa-solid fa-plus" style="font-size: 11px;"></i>
+                            </button>
+                        </div>
+
+                        <!-- Subtotal individual -->
+                        <div class="text-sm-end">
+                            <span class="small text-secondary-dark d-block">Subtotal</span>
+                            <span class="fw-bold text-white fs-5" id="subtotal-val-@item.ProductoId">$@itemSubtotal.ToString("N2")</span>
+                        </div>
+
+                        <!-- Eliminar item -->
+                        <div>
+                            <button type="button" class="btn text-rose-soft bg-rose-soft bg-opacity-10 border-0 p-2 px-3 rounded" onclick="eliminarDelCarrito(@item.ProductoId)">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- FORMULARIO DE CHECKOUT Y RESUMEN -->
+        <div class="col-lg-4">
+            <div class="glass-card card-glow p-4">
+                <h4 class="font-outfit fw-bold mb-3 border-bottom pb-2" style="border-color: var(--card-border-dark) !important;">Resumen del Pedido</h4>
+                
+                <div class="d-flex justify-content-between small text-secondary-dark mb-2">
+                    <span>Subtotal parcial</span>
+                    <span id="summary-subtotal">$@subtotal.ToString("N2")</span>
+                </div>
+                <div class="d-flex justify-content-between small text-secondary-dark mb-2">
+                    <span>IVA (21%)</span>
+                    <span id="summary-iva">$@iva.ToString("N2")</span>
+                </div>
+                <div class="d-flex justify-content-between small text-secondary-dark mb-3">
+                    <span>Envío</span>
+                    <span class="text-emerald-soft">Gratuito</span>
+                </div>
+                <div class="d-flex justify-content-between fw-bold text-white fs-5 mb-4 border-top pt-2" style="border-color: var(--card-border-dark) !important;">
+                    <span>Total Final</span>
+                    <span id="summary-total">$@total.ToString("N2")</span>
+                </div>
+
+                <!-- FORMULARIO DE CONFIRMACIÓN -->
+                @if (isAuthenticated)
+                {
+                    <h5 class="font-outfit fw-bold mb-3">Datos del Envío</h5>
+                    <form asp-controller="Pedidos" asp-action="ConfirmarPedido" method="post">
+                        @Html.AntiForgeryToken()
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-secondary-dark small fw-bold">Destinatario</label>
+                            <input type="text" name="Destinatario" class="form-control" value="@User.Identity?.Name" placeholder="Nombre de quien recibe" required style="border: 1px solid var(--card-border-dark);" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-secondary-dark small fw-bold">Dirección de Entrega</label>
+                            <input type="text" name="Direccion" class="form-control" placeholder="Calle, Número, Ciudad" required style="border: 1px solid var(--card-border-dark);" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-secondary-dark small fw-bold">Teléfono de Contacto</label>
+                            <input type="text" name="Telefono" class="form-control" placeholder="Ej: +34 600 123 456" required style="border: 1px solid var(--card-border-dark);" />
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label text-secondary-dark small fw-bold">Método de Pago</label>
+                            <select name="MetodoPago" class="form-select" style="border: 1px solid var(--card-border-dark);">
+                                <option value="Tarjeta">Tarjeta de Crédito / Débito</option>
+                                <option value="Transferencia">Transferencia Bancaria</option>
+                                <option value="Efectivo">Pago Contra Entrega (Efectivo)</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn-premium w-100 py-3 justify-content-center">
+                            <i class="fa-solid fa-credit-card me-2"></i> Confirmar y Pagar
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <div class="text-center p-3 border rounded border-warning border-opacity-25 bg-warning bg-opacity-10 mb-2">
+                        <i class="fa-solid fa-circle-exclamation text-warning mb-2" style="font-size: 20px;"></i>
+                        <p class="text-secondary-dark small mb-0">Debes ingresar a tu cuenta para poder procesar la compra de tus productos.</p>
+                    </div>
+                    <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Context.Request.Path" class="btn-premium w-100 justify-content-center mt-3">
+                        <i class="fa-solid fa-right-to-bracket me-2"></i> Iniciar Sesión para Comprar
+                    </a>
+                }
+
+            </div>
+        </div>
+
+    </div>
+}
+
+@section Scripts {
+    <script>
+        // Ajustar cantidad de productos mediante llamada AJAX
+        function ajustarCantidad(productoId, delta) {
+            const currentQty = parseInt(document.getElementById(`qty-val-${productoId}`).textContent);
+            const newQty = currentQty + delta;
+            
+            if (newQty < 1) return;
+
+            fetch('/Pedidos/ActualizarCantidad', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                },
+                body: `id=${productoId}&cantidad=${newQty}`
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Actualizar cantidad física en pantalla
+                    document.getElementById(`qty-val-${productoId}`).textContent = newQty;
+                    
+                    // Actualizar subtotal individual
+                    const unitPrice = data.itemPrecio;
+                    const subtotalItem = unitPrice * newQty;
+                    document.getElementById(`subtotal-val-${productoId}`).textContent = `$${subtotalItem.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+                    // Actualizar resumen de totales
+                    actualizarResumenTotales(data.subtotal, data.iva, data.total);
+                    
+                    // Actualizar badge lateral
+                    const badge = document.getElementById("cartBadgeLayout");
+                    if (badge) badge.textContent = data.cartCount;
+                } else {
+                    alert("No se pudo actualizar la cantidad: " + data.message);
+                }
+            })
+            .catch(() => alert("Error al conectar con el servidor."));
+        }
+
+        // Eliminar producto del carrito mediante AJAX
+        function eliminarDelCarrito(productoId) {
+            fetch('/Pedidos/EliminarDelCarrito', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                },
+                body: `id=${productoId}`
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Remover fila de la pantalla con animación
+                    const row = document.getElementById(`cart-row-${productoId}`);
+                    if (row) {
+                        row.style.opacity = '0';
+                        row.style.transform = 'translateY(10px)';
+                        setTimeout(() => {
+                            row.remove();
+                            // Si ya no quedan filas, recargar para mostrar el panel de carrito vacío
+                            if (data.cartCount === 0) {
+                                location.reload();
+                            }
+                        }, 300);
+                    }
+
+                    // Actualizar resumen de totales
+                    actualizarResumenTotales(data.subtotal, data.iva, data.total);
+
+                    // Actualizar badge lateral
+                    const badge = document.getElementById("cartBadgeLayout");
+                    if (badge) {
+                        if (data.cartCount > 0) {
+                            badge.textContent = data.cartCount;
+                        } else {
+                            badge.remove();
+                        }
+                    }
+                } else {
+                    alert("Error al eliminar el producto: " + data.message);
+                }
+            })
+            .catch(() => alert("Error al conectar con el servidor."));
+        }
+
+        // Recalcular los contenedores de resumen
+        function actualizarResumenTotales(subtotal, iva, total) {
+            document.getElementById("summary-subtotal").textContent = `$${subtotal.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById("summary-iva").textContent = `$${iva.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById("summary-total").textContent = `$${total.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+    </script>
+}

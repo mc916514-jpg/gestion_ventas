@@ -1,0 +1,259 @@
+@using Microsoft.AspNetCore.Http
+@using System.Text.Json
+@using System.Security.Claims
+@{
+    // Obtener cantidad de items en el carrito desde sesión
+    var cartJson = Context.Session.GetString("ShoppingCart");
+    var cartCount = 0;
+    if (!string.IsNullOrEmpty(cartJson))
+    {
+        try
+        {
+            var cart = JsonSerializer.Deserialize<List<GestionComercial.Controllers.PedidosController.CartItem>>(cartJson);
+            cartCount = cart?.Sum(i => i.Cantidad) ?? 0;
+        }
+        catch {}
+    }
+
+    // Obtener rol e info del usuario actual
+    var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
+    var userRol = isAuthenticated ? User.FindFirst(ClaimTypes.Role)?.Value : string.Empty;
+    var userNombre = isAuthenticated ? User.Identity?.Name : string.Empty;
+    var avatarLetter = !string.IsNullOrEmpty(userNombre) ? userNombre.Substring(0, 1).ToUpper() : "?";
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - NexoComercial</title>
+    
+    <!-- Google Fonts Premium -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Bootstrap CSS Core -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    
+    <!-- Custom Glassmorphism Stylesheet -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+
+    <!-- CABECERA PARA DISPOSITIVOS MÓVILES -->
+    <div class="mobile-header">
+        <a class="sidebar-brand" asp-controller="Home" asp-action="Index">
+            <i class="fa-solid fa-bolt"></i> NexoComercial
+        </a>
+        <button class="sidebar-toggle-btn" id="sidebarToggle">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+    </div>
+
+    <!-- SIDEBAR / MENÚ LATERAL -->
+    <aside class="sidebar" id="sidebarMenu">
+        <a class="sidebar-brand" asp-controller="Home" asp-action="Index">
+            <i class="fa-solid fa-bolt"></i> NexoComercial
+        </a>
+        
+        <ul class="nav-menu">
+            <li>
+                <a class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" 
+                   asp-controller="Home" asp-action="Index">
+                    <i class="fa-solid fa-shop"></i> Catálogo
+                </a>
+            </li>
+            <li>
+                <a class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Pedidos" && ViewContext.RouteData.Values["action"]?.ToString() == "Cart" ? "active" : "")" 
+                   asp-controller="Pedidos" asp-action="Cart">
+                    <i class="fa-solid fa-cart-shopping"></i> Carrito
+                    @if (cartCount > 0)
+                    {
+                        <span class="badge bg-indigo-soft ms-auto" id="cartBadgeLayout">@cartCount</span>
+                    }
+                </a>
+            </li>
+
+            @if (isAuthenticated)
+            {
+                <li>
+                    <a class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Pedidos" && ViewContext.RouteData.Values["action"]?.ToString() == "Historial" ? "active" : "")" 
+                       asp-controller="Pedidos" asp-action="Historial">
+                        <i class="fa-solid fa-receipt"></i> Mis Pedidos
+                    </a>
+                </li>
+            }
+
+            <!-- SECCIÓN ADMINISTRATIVA (Solo visible para Rol 'Admin') -->
+            @if (isAuthenticated && userRol == "Admin")
+            {
+                <div class="text-uppercase text-muted fw-bold mt-4 mb-2" style="font-size: 10px; letter-spacing: 1px; padding-left: 16px;">Administración</div>
+                
+                <li>
+                    <a class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Reportes" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" 
+                       asp-controller="Reportes" asp-action="Index">
+                        <i class="fa-solid fa-chart-pie"></i> Dashboard Ventas
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Reportes" && ViewContext.RouteData.Values["action"]?.ToString() == "Ventas" ? "active" : "")" 
+                       asp-controller="Reportes" asp-action="Ventas">
+                        <i class="fa-solid fa-file-invoice-dollar"></i> Reporte Ventas
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Productos" ? "active" : "")" 
+                       asp-controller="Productos" asp-action="Index">
+                        <i class="fa-solid fa-box"></i> CRUD Productos
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Categorias" ? "active" : "")" 
+                       asp-controller="Categorias" asp-action="Index">
+                        <i class="fa-solid fa-tags"></i> CRUD Categorías
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Inventario" ? "active" : "")" 
+                       asp-controller="Inventario" asp-action="Index">
+                        <i class="fa-solid fa-warehouse"></i> Inventario / Stock
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Comentarios" ? "active" : "")" 
+                       asp-controller="Comentarios" asp-action="Index">
+                        <i class="fa-solid fa-comments"></i> Moderar Reseñas
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-item-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Contactos" ? "active" : "")" 
+                       asp-controller="Contactos" asp-action="Index">
+                        <i class="fa-solid fa-envelope-open-text"></i> Buzón Mensajes
+                    </a>
+                </li>
+            }
+        </ul>
+
+        <!-- BOTÓN DE CERRAR SESIÓN -->
+        @if (isAuthenticated)
+        {
+            <div class="mt-auto pt-4">
+                <form asp-controller="Account" asp-action="Logout" method="post" id="logoutForm">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="nav-item-link text-danger w-100 border-0 bg-transparent text-start">
+                        <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+                    </button>
+                </form>
+            </div>
+        }
+    </aside>
+
+    <!-- ÁREA DE CONTENIDO PRINCIPAL -->
+    <div class="main-content">
+        
+        <!-- BARRA SUPERIOR -->
+        <header class="top-bar">
+            <!-- Widget de Clima AJAX -->
+            <div class="weather-widget" id="weatherWidget">
+                <i class="fa-solid fa-spinner fa-spin me-1"></i> Cargando clima de Madrid...
+            </div>
+
+            <!-- Perfil / Autenticación -->
+            <div class="d-flex align-items-center gap-3">
+                @if (isAuthenticated)
+                {
+                    <div class="user-profile">
+                        <div class="user-avatar">@avatarLetter</div>
+                        <span>@userNombre</span>
+                    </div>
+                }
+                else
+                {
+                    <a class="btn-premium-outline btn-sm" asp-controller="Account" asp-action="Login">
+                        <i class="fa-solid fa-right-to-bracket"></i> Ingresar
+                    </a>
+                    <a class="btn-premium btn-sm" asp-controller="Account" asp-action="Register">
+                        Registrarse
+                    </a>
+                }
+            </div>
+        </header>
+
+        <!-- CUERPO PRINCIPAL DE LA VISTA -->
+        <main role="main" class="pb-5">
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-premium alert-premium-success alert-dismissible fade show" role="alert">
+                    <i class="fa-solid fa-circle-check me-2"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-premium alert-premium-danger alert-dismissible fade show" role="alert">
+                    <i class="fa-solid fa-triangle-exclamation me-2"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @RenderBody()
+        </main>
+    </div>
+
+    <!-- SCRIPTS CORE -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <!-- AJAX Widget Clima y Sidebar responsive -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // 1. Alternador de Sidebar en dispositivos móviles
+            const sidebarToggle = document.getElementById("sidebarToggle");
+            const sidebarMenu = document.getElementById("sidebarMenu");
+
+            if (sidebarToggle && sidebarMenu) {
+                sidebarToggle.addEventListener("click", function(e) {
+                    e.stopPropagation();
+                    sidebarMenu.classList.toggle("active");
+                });
+
+                document.addEventListener("click", function(e) {
+                    if (!sidebarMenu.contains(e.target) && e.target !== sidebarToggle) {
+                        sidebarMenu.classList.remove("active");
+                    }
+                });
+            }
+
+            // 2. Fetch API para el clima de Madrid (Open-Meteo)
+            const weatherWidget = document.getElementById("weatherWidget");
+            if (weatherWidget) {
+                fetch("/Home/ClimaProxy")
+                    .then(response => {
+                        if (!response.ok) throw new Error("Network response error");
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.current_weather) {
+                            const temp = Math.round(data.current_weather.temperature);
+                            const wind = data.current_weather.windspeed;
+                            weatherWidget.innerHTML = `<i class="fa-solid fa-cloud-sun"></i> Madrid: <strong>${temp}°C</strong> | Viento: ${wind} km/h`;
+                        } else {
+                            weatherWidget.innerHTML = `<i class="fa-solid fa-cloud-sun"></i> Madrid: 21°C`;
+                        }
+                    })
+                    .catch(() => {
+                        // Fallback elegante en caso de offline
+                        weatherWidget.innerHTML = `<i class="fa-solid fa-cloud-sun"></i> Madrid: 21°C`;
+                    });
+            }
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
